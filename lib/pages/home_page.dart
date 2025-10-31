@@ -3,7 +3,6 @@ import '../models/product.dart';
 import '../providers/cart_provider.dart';
 import '../services/product_service.dart';
 import '../widgets/product_card.dart';
-import '../widgets/additionals_dialog.dart';
 import '../widgets/cart_modal.dart';
 import 'package:bulldogs/pages/checkout_screen.dart';
 
@@ -220,7 +219,7 @@ class _HomePageState extends State<HomePage> {
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: crossAxisCount,
-                                childAspectRatio: 0.7,
+                                childAspectRatio: 1.0,
                                 crossAxisSpacing: 16,
                                 mainAxisSpacing: 16,
                               ),
