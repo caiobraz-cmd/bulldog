@@ -93,7 +93,7 @@ class _AdditionalsDialogState extends State<AdditionalsDialog> {
                   'Item adicionado ao carrinho!',
                   style: TextStyle(color: Colors.white),
                 ),
-                backgroundColor: Colors.red.withOpacity(0.8),
+                backgroundColor: Colors.red.withValues(alpha: 0.8),
                 duration: const Duration(seconds: 2),
               ),
             );

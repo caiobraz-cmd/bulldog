@@ -5,6 +5,7 @@ import '../services/product_service.dart';
 import '../widgets/product_card.dart';
 import '../widgets/additionals_dialog.dart';
 import '../widgets/cart_modal.dart';
+import 'package:bulldogs/pages/checkout_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -34,9 +35,19 @@ class _HomePageState extends State<HomePage> {
               showDialog(
                 context: context,
                 builder: (context) => CartModal(cartProvider: _cartProvider),
-              );
+              ).then((value) {
+                // Se o CartModal retornar 'checkout'
+                if (value == 'checkout') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CheckoutScreen(),
+                    ),
+                  );
+                }
+              });
             },
-            backgroundColor: Colors.black.withOpacity(0.4),
+            backgroundColor: Colors.black.withValues(alpha: 0.4),
             child: const Icon(
               Icons.shopping_cart,
               color: Colors.white,
