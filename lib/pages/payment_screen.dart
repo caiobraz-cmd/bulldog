@@ -1,3 +1,4 @@
+import 'package:bulldogs/models/product.dart';
 import 'package:flutter/material.dart';
 
 // --- 2.3. TELA DE PAGAMENTO (UI Pronta) ---
@@ -26,11 +27,12 @@ class PaymentScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
-              FilledButton(
+              ElevatedButton(
                 onPressed: () {
                   // TODO: Lógica para finalizar o pedido (dar baixa no estoque, etc)
 
                   // Simplesmente volta para a Home por enquanto
+
                   Navigator.popUntil(context, (route) => route.isFirst);
                 },
                 child: const Text('Finalizar Pedido (Simulado)'),

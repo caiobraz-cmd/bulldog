@@ -50,9 +50,13 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 100),
-              // Placeholder para o Logo "BULL DOGS LANCHES"
-              // Você pode trocar por: Image.asset('assets/logo.png')
+              Center(
+                child: Image.asset(
+                  'assets/NETAIO/img/logo.png',
+                  width: 250,
+                  height: 180,
+                ),
+              ),
               Container(
                 height: 150,
                 width: 150,

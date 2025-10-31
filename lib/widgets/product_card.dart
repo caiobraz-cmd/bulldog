@@ -1,15 +1,35 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
+import '../providers/cart_provider.dart'; // 1. IMPORTAR O CARTPROVIDER
+import 'additionals_dialog.dart'; // 2. IMPORTAR O DIALOG (DO SEU CANVAS)
 
 class ProductCard extends StatelessWidget {
   final Product product;
-  final VoidCallback onAddToCart;
+  // 3. MODIFICAR OS PARÂMETROS
+  final CartProvider cartProvider;
+  final VoidCallback onCartUpdated; // Substitui o onAddToCart
 
   const ProductCard({
     super.key,
     required this.product,
-    required this.onAddToCart,
+    required this.cartProvider,
+    required this.onCartUpdated,
   });
+
+  // 4. MÉTODO PRIVADO PARA MOSTRAR O DIALOG
+  void _showAdditionalsDialog(BuildContext context, {required bool isBuyNow}) {
+    showDialog(
+      context: context,
+      builder: (context) => AdditionalsDialog(
+        product: product,
+        cartProvider: cartProvider,
+        isBuyNow: isBuyNow, // Passa o parâmetro 'true' ou 'false'
+      ),
+    ).then((_) {
+      // Após o dialog fechar, atualiza o contador do carrinho na home
+      onCartUpdated();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +104,9 @@ class ProductCard extends StatelessWidget {
                 Expanded(
                   flex: 2,
                   child: ElevatedButton(
-                    onPressed: onAddToCart,
+                    // 5. CHAMADA DO "VAMOS NESSA?" (isBuyNow: true)
+                    onPressed: () =>
+                        _showAdditionalsDialog(context, isBuyNow: true),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFe41d31),
                       foregroundColor: Colors.white,
@@ -100,7 +122,9 @@ class ProductCard extends StatelessWidget {
                 Expanded(
                   flex: 1,
                   child: ElevatedButton(
-                    onPressed: onAddToCart,
+                    // 6. CHAMADA DO "ADICIONAR AO CARRINHO" (isBuyNow: false)
+                    onPressed: () =>
+                        _showAdditionalsDialog(context, isBuyNow: false),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFe41d31),
                       foregroundColor: Colors.white,

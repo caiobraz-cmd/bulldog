@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
+import '../pages/checkout_screen.dart'; // IMPORTA A TELA DE CHECKOUT
 import '../providers/cart_provider.dart';
 import '../services/product_service.dart';
 
 class AdditionalsDialog extends StatefulWidget {
   final Product product;
   final CartProvider cartProvider;
+  // 1. NOVO PARÂMETRO para decidir o fluxo
+  final bool isBuyNow;
 
   const AdditionalsDialog({
     super.key,
     required this.product,
     required this.cartProvider,
+    this.isBuyNow = false, // Padrão é 'false' (adicionar ao carrinho)
   });
 
   @override
@@ -78,32 +82,53 @@ class _AdditionalsDialogState extends State<AdditionalsDialog> {
           child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
         ),
         ElevatedButton(
+          // 2. LÓGICA CONDICIONAL NO BOTÃO
           onPressed: () {
             final cartItem = CartItem(
               product: widget.product,
               additionals: List.from(_selectedAdditionals),
             );
-            widget.cartProvider.addItem(cartItem);
-            Navigator.of(context).pop();
 
-            // Show success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text(
-                  'Item adicionado ao carrinho!',
-                  style: TextStyle(color: Colors.white),
+            // Se for "Vamos nessa?" (Comprar Agora)
+            if (widget.isBuyNow) {
+              // Limpa o carrinho para garantir que é um item único
+              widget.cartProvider.clearCart();
+              // Adiciona este item
+              widget.cartProvider.addItem(cartItem);
+
+              // Fecha o dialog E navega para a tela de checkout
+              Navigator.of(context).pop(); // Fecha o dialog
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const CheckoutScreen()),
+              );
+            }
+            // Se for o fluxo normal (Adicionar ao Carrinho)
+            else {
+              widget.cartProvider.addItem(cartItem);
+              Navigator.of(context).pop();
+
+              // Show success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'Item adicionado ao carrinho!',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: Colors.red.withValues(alpha: 0.8),
+                  duration: const Duration(seconds: 2),
                 ),
-                backgroundColor: Colors.red.withValues(alpha: 0.8),
-                duration: const Duration(seconds: 2),
-              ),
-            );
+              );
+            }
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFe41d31),
             foregroundColor: Colors.white,
           ),
+          // 3. TEXTO DO BOTÃO CONDICIONAL
           child: Text(
-            'Adicionar ao carrinho (R\$ ${_totalPrice.toStringAsFixed(2)})',
+            widget.isBuyNow
+                ? 'Finalizar (R\$ ${_totalPrice.toStringAsFixed(2)})'
+                : 'Adicionar ao carrinho (R\$ ${_totalPrice.toStringAsFixed(2)})',
           ),
         ),
       ],

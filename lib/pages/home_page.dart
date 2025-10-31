@@ -229,18 +229,9 @@ class _HomePageState extends State<HomePage> {
                             final product = products[index];
                             return ProductCard(
                               product: product,
-                              onAddToCart: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AdditionalsDialog(
-                                    product: product,
-                                    cartProvider: _cartProvider,
-                                  ),
-                                ).then((_) {
-                                  setState(
-                                    () {},
-                                  ); // Refresh to update cart badge
-                                });
+                              cartProvider: _cartProvider,
+                              onCartUpdated: () {
+                                setState(() {});
                               },
                             );
                           },

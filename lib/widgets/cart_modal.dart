@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import '../providers/cart_provider.dart';
 
-class CartModal extends StatelessWidget {
+// 1. CONVERTIDO PARA STATEFULWIDGET
+// (Necessário para corrigir o bug de exclusão de item)
+class CartModal extends StatefulWidget {
   final CartProvider cartProvider;
 
   const CartModal({super.key, required this.cartProvider});
 
+  @override
+  State<CartModal> createState() => _CartModalState();
+}
+
+class _CartModalState extends State<CartModal> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -37,7 +44,8 @@ class CartModal extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Cart Items
-            if (cartProvider.items.isEmpty)
+            // (Usamos 'widget.cartProvider' por estarmos em um StatefulWidget)
+            if (widget.cartProvider.items.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(40),
                 child: Text(
@@ -49,9 +57,9 @@ class CartModal extends StatelessWidget {
               Flexible(
                 child: ListView.builder(
                   shrinkWrap: true,
-                  itemCount: cartProvider.items.length,
+                  itemCount: widget.cartProvider.items.length,
                   itemBuilder: (context, index) {
-                    final item = cartProvider.items[index];
+                    final item = widget.cartProvider.items[index];
                     return Card(
                       color: const Color(0xFF404040),
                       margin: const EdgeInsets.only(bottom: 8),
@@ -71,8 +79,15 @@ class CartModal extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 8),
+                            // 2. CORREÇÃO DO BUG DE EXCLUSÃO
                             IconButton(
-                              onPressed: () => cartProvider.removeItem(index),
+                              onPressed: () {
+                                // Usamos setState para redesenhar o modal
+                                // após remover o item
+                                setState(() {
+                                  widget.cartProvider.removeItem(index);
+                                });
+                              },
                               icon: const Icon(Icons.delete, color: Colors.red),
                             ),
                           ],
@@ -83,7 +98,8 @@ class CartModal extends StatelessWidget {
                 ),
               ),
 
-            if (cartProvider.items.isNotEmpty) ...[
+            // Mostra o total e os botões apenas se o carrinho não estiver vazio
+            if (widget.cartProvider.items.isNotEmpty) ...[
               const Divider(color: Colors.grey),
 
               // Total
@@ -99,7 +115,7 @@ class CartModal extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'R\$ ${cartProvider.totalPrice.toStringAsFixed(2)}',
+                    'R\$ ${widget.cartProvider.totalPrice.toStringAsFixed(2)}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -128,17 +144,11 @@ class CartModal extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
+                      // 3. CONEXÃO COM A TELA DE CHECKOUT
                       onPressed: () {
-                        
-                        Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Funcionalidade de checkout em desenvolvimento!',
-                            ),
-                            backgroundColor: Color(0xFFe41d31),
-                          ),
-                        );
+                        // Fecha o modal e retorna o valor 'checkout'
+                        // A HomePage está esperando por esse valor
+                        Navigator.of(context).pop('checkout');
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFe41d31),
