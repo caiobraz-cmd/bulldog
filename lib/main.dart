@@ -6,6 +6,7 @@ import 'models/product.dart';
 
 // Telas do Cliente
 import 'pages/login_page.dart';
+import 'pages/register_screen.dart';
 import 'pages/home_page.dart';
 import 'pages/checkout_screen.dart';
 import 'pages/payment_screen.dart';
@@ -76,6 +77,7 @@ class MyApp extends StatelessWidget {
       // Define todas as rotas do aplicativo
       routes: {
         '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
         '/home': (context) => const HomePage(),
         '/checkout': (context) => const CheckoutScreen(),
         '/payment': (context) => const PaymentScreen(),

@@ -2,36 +2,31 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  Future<void> _login() async {
-    // 1. Validação inicial no app
+  Future<void> _register() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      _showFeedbackMessage(
-        'Por favor, preencha e-mail e senha.',
-        isError: true,
-      );
+      _showFeedback('Preencha todos os campos.', isError: true);
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
-    final url = Uri.parse('https://oracleapex.com/ords/bulldog/api/login-user');
+    final url = Uri.parse(
+      'https://oracleapex.com/ords/bulldog/api/register-user',
+    );
 
     try {
-      // 2. Envio dos dados para a API via POST
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -41,57 +36,26 @@ class _LoginScreenState extends State<LoginScreen> {
         }),
       );
 
-      if (!mounted) return;
-
       final responseData = json.decode(response.body);
 
-      // 3. Verificação da resposta da API
       if (response.statusCode == 200) {
-        // SUCESSO! A API autenticou o usuário.
-        // AGORA, a decisão é baseada na "role" que a API enviou.
-        final String role = responseData['role'] ?? 'unknown'; // Pega a "role"
-
-        switch (role) {
-          case 'admin':
-            Navigator.of(context).pushReplacementNamed('/admin');
-            break;
-          case 'cliente':
-            Navigator.of(context).pushReplacementNamed('/home');
-            break;
-          default:
-            // Caso a API retorne uma role inesperada
-            _showFeedbackMessage(
-              'Erro: Tipo de usuário desconhecido.',
-              isError: true,
-            );
-        }
+        _showFeedback(responseData['message']);
+        Navigator.pop(context); // Volta pro login
       } else {
-        // FALHA! A API retornou um erro (ex: 401).
-        final String message =
-            responseData['message'] ?? 'Credenciais inválidas.';
-        _showFeedbackMessage(message, isError: true);
+        _showFeedback(responseData['message'], isError: true);
       }
-    } catch (error) {
-      // Erro de rede ou falha na comunicação com a API
-      _showFeedbackMessage(
-        'Erro de conexão. Verifique sua internet.',
-        isError: true,
-      );
+    } catch (e) {
+      _showFeedback('Erro de conexão. Tente novamente.', isError: true);
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() => _isLoading = false);
     }
   }
 
-  void _showFeedbackMessage(String message, {bool isError = false}) {
+  void _showFeedback(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: isError ? const Color(0xFFe41d31) : Colors.green,
-        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -114,19 +78,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 colors: [Colors.black, Color(0xFF9c0707)],
               ),
             ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(
-                left: 32.0,
-                right: 32.0,
-                top: 32.0,
-                bottom: 250.0, // Adiciona espaço para o footer
-              ),
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 450),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const SizedBox(height: 40),
                       Image.asset(
@@ -141,17 +99,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                         },
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 30),
                       TextField(
                         controller: _emailController,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          hintText: 'Email',
+                          hintText: 'Usuário',
                           hintStyle: TextStyle(color: Colors.grey[400]),
                           filled: true,
                           fillColor: textFieldColor,
                           prefixIcon: const Icon(
-                            Icons.email,
+                            Icons.person,
                             color: Colors.white,
                           ),
                           border: OutlineInputBorder(
@@ -159,7 +117,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 20),
                       TextField(
@@ -185,34 +142,34 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _login,
+                          onPressed: _register,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
-                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: const Text(
-                            'LOGIN',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          child: _isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  'REGISTRAR',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/register');
-                        },
+                      const SizedBox(height: 20),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
                         child: const Text(
-                          'Não tem conta? Registre-se',
+                          'Já tem uma conta? Faça login',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
+                            color: Colors.white70,
                             decoration: TextDecoration.underline,
                           ),
                         ),
@@ -296,9 +253,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GestureDetector(
-                        onTap: () => _showFeedbackMessage(
-                          'Instagram: @bull_dogs_lanches',
-                        ),
+                        onTap: () =>
+                            _showFeedback('Instagram: @bull_dogs_lanches'),
                         child: const Row(
                           children: [
                             Icon(Icons.camera_alt, color: Color(0xFFe41d31)),
@@ -312,8 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(width: 20),
                       GestureDetector(
-                        onTap: () =>
-                            _showFeedbackMessage('WhatsApp: (44) 9976-5116'),
+                        onTap: () => _showFeedback('WhatsApp: (44) 9976-5116'),
                         child: const Row(
                           children: [
                             Icon(Icons.phone, color: Color(0xFFe41d31)),
