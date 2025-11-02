@@ -1,4 +1,3 @@
-import 'package:bulldogs/models/product.dart';
 import 'package:flutter/material.dart';
 
 // --- 2.3. TELA DE PAGAMENTO (UI Pronta) ---

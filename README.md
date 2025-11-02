@@ -1,4 +1,4 @@
-# bulldogs
+# bulldog
 
 A new Flutter project.
 

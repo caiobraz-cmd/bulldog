@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,23 +12,85 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
 
-  void _login() {
-    // Lógica de login simulada
-    if (_emailController.text == 'admin@bulldogs.com') {
-      // Navega para o painel de admin
-      Navigator.of(context).pushReplacementNamed('/admin');
-    } else {
-      // Navega para a home de cliente
-      Navigator.of(context).pushReplacementNamed('/home');
+  Future<void> _login() async {
+    // 1. Validação inicial no app
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showFeedbackMessage(
+        'Por favor, preencha e-mail e senha.',
+        isError: true,
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final url = Uri.parse('https://oracleapex.com/ords/bulldog/api/login-user');
+
+    try {
+      // 2. Envio dos dados para a API via POST
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'username': _emailController.text,
+          'password': _passwordController.text,
+        }),
+      );
+
+      if (!mounted) return;
+
+      final responseData = json.decode(response.body);
+
+      // 3. Verificação da resposta da API
+      if (response.statusCode == 200) {
+        // SUCESSO! A API autenticou o usuário.
+        // AGORA, a decisão é baseada na "role" que a API enviou.
+        final String role = responseData['role'] ?? 'unknown'; // Pega a "role"
+
+        switch (role) {
+          case 'admin':
+            Navigator.of(context).pushReplacementNamed('/admin');
+            break;
+          case 'cliente':
+            Navigator.of(context).pushReplacementNamed('/home');
+            break;
+          default:
+            // Caso a API retorne uma role inesperada
+            _showFeedbackMessage(
+              'Erro: Tipo de usuário desconhecido.',
+              isError: true,
+            );
+        }
+      } else {
+        // FALHA! A API retornou um erro (ex: 401).
+        final String message =
+            responseData['message'] ?? 'Credenciais inválidas.';
+        _showFeedbackMessage(message, isError: true);
+      }
+    } catch (error) {
+      // Erro de rede ou falha na comunicação com a API
+      _showFeedbackMessage(
+        'Erro de conexão. Verifique sua internet.',
+        isError: true,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  void _showLinkMessage(String message) {
+  void _showFeedbackMessage(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFFe41d31),
+        backgroundColor: isError ? const Color(0xFFe41d31) : Colors.green,
         duration: const Duration(seconds: 3),
       ),
     );
@@ -218,8 +282,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GestureDetector(
-                        onTap: () =>
-                            _showLinkMessage('Instagram: @bull_dogs_lanches'),
+                        onTap: () => _showFeedbackMessage(
+                          'Instagram: @bull_dogs_lanches',
+                        ),
                         child: const Row(
                           children: [
                             Icon(Icons.camera_alt, color: Color(0xFFe41d31)),
@@ -234,7 +299,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(width: 20),
                       GestureDetector(
                         onTap: () =>
-                            _showLinkMessage('WhatsApp: (44) 9976-5116'),
+                            _showFeedbackMessage('WhatsApp: (44) 9976-5116'),
                         child: const Row(
                           children: [
                             Icon(Icons.phone, color: Color(0xFFe41d31)),

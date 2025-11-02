@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bulldogs/pages/payment_screen.dart';
+import 'package:bulldog/pages/payment_screen.dart';
 
 // --- 2.2. TELA DE FINALIZAÇÃO (Endereço) ---
 // Baseada no Mock-up (Página 13)

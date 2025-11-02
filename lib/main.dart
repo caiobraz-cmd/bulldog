@@ -39,7 +39,6 @@ class MyApp extends StatelessWidget {
         colorScheme: const ColorScheme.dark(
           primary: primaryColor,
           secondary: primaryColor,
-          background: darkBackground,
           surface: cardColor, // Cor dos cards
         ),
         textTheme: GoogleFonts.poppinsTextTheme(

@@ -99,7 +99,7 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Produto "${name}" salvo com sucesso!'),
+            content: Text('Produto "$name" salvo com sucesso!'),
             backgroundColor: Colors.green[700],
           ),
         );

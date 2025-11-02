@@ -1,6 +1,6 @@
 {
-    "name": "bulldogs",
-    "short_name": "bulldogs",
+    "name": "bulldog",
+    "short_name": "bulldog",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

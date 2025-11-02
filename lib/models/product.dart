@@ -20,6 +20,15 @@ class Product {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'seq_id': seqId,
+      'ds_nome': name,
+      'preco': price,
+      'ingredientes': ingredients,
+    };
+  }
+
   String get id => seqId.toString();
   String get description => ingredients;
 

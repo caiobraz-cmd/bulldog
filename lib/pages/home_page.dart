@@ -4,7 +4,7 @@ import '../providers/cart_provider.dart';
 import '../services/product_service.dart';
 import '../widgets/product_card.dart';
 import '../widgets/cart_modal.dart';
-import 'package:bulldogs/pages/checkout_screen.dart';
+import 'package:bulldog/pages/checkout_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
