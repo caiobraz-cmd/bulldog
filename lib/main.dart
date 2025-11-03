@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart'; // 1. IMPORT DO PROVIDER
 
-// 1. IMPORT FALTANTE ADICIONADO AQUI
+// Models e Providers
 import 'models/product.dart';
+import 'providers/cart_provider.dart'; // 2. IMPORT DO CART_PROVIDER
 
 // Telas do Cliente
 import 'pages/login_page.dart';
@@ -10,6 +12,7 @@ import 'pages/register_screen.dart';
 import 'pages/home_page.dart';
 import 'pages/checkout_screen.dart';
 import 'pages/payment_screen.dart';
+import 'pages/review_order_screen.dart'; // Import da tela de Revisão
 
 // Telas do Admin
 import 'pages/admin/admin_dashboard_screen.dart';
@@ -18,7 +21,13 @@ import 'pages/admin/admin_reports_screen.dart';
 import 'pages/admin/admin_product_edit_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  // 3. ENVOLVER A APLICAÇÃO COM O PROVIDER (ESSENCIAL)
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => CartProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -40,6 +49,7 @@ class MyApp extends StatelessWidget {
         colorScheme: const ColorScheme.dark(
           primary: primaryColor,
           secondary: primaryColor,
+          background: darkBackground,
           surface: cardColor, // Cor dos cards
         ),
         textTheme: GoogleFonts.poppinsTextTheme(
@@ -48,7 +58,6 @@ class MyApp extends StatelessWidget {
             displayColor: Colors.white,
           ),
         ),
-        // AJUSTE FEITO AQUI
         appBarTheme: AppBarTheme(
           backgroundColor: cardColor,
           elevation: 0,
@@ -80,14 +89,21 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => const HomePage(),
         '/checkout': (context) => const CheckoutScreen(),
+        // Rota para a nova tela de Revisão
+        '/review': (context) {
+          final args =
+              ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+          return ReviewOrderScreen(
+            address: args['address']!,
+            addressObservation: args['addressObservation']!,
+          );
+        },
         '/payment': (context) => const PaymentScreen(),
         '/admin': (context) => const AdminDashboardScreen(),
         '/admin/products': (context) => const AdminProductListScreen(),
         '/admin/reports': (context) => const AdminReportsScreen(),
-
         '/admin/product/edit': (context) {
           // Pega o argumento (produto) passado pela navegação
-          // 2. AGORA ESTA LINHA FUNCIONA
           final product =
               ModalRoute.of(context)!.settings.arguments as Product?;
           return AdminProductEditScreen(product: product);

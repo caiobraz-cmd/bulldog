@@ -80,7 +80,7 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
         'description': description,
         'price': price,
         'imagePath': imagePath,
-        // TODO: Você precisará adaptar isso ao seu modelo
+        // Você precisará adaptar isso ao seu modelo
       };
 
       // 3. CHAMA O SERVICE

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // 1. IMPORTAR PROVIDER
 import '../models/product.dart';
-import '../providers/cart_provider.dart';
+import '../providers/cart_provider.dart'; // 2. IMPORTAR CART_PROVIDER
 import '../services/product_service.dart';
 import '../widgets/product_card.dart';
 import '../widgets/cart_modal.dart';
-import 'package:bulldog/pages/checkout_screen.dart';
+// O import do checkout_screen não é mais necessário aqui
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,7 +15,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final CartProvider _cartProvider = CartProvider();
+  // 3. REMOVIDO: final CartProvider _cartProvider = CartProvider();
   late Future<List<Product>> _productsFuture;
 
   @override
@@ -25,57 +26,73 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // 4. O provider é acessado aqui para os 'onPressed'
+    // 'listen: false' é importante fora de 'Consumers'
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
     return Scaffold(
       backgroundColor: Colors.black,
-      floatingActionButton: Stack(
-        children: [
-          FloatingActionButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => CartModal(cartProvider: _cartProvider),
-              ).then((value) {
-                // Se o CartModal retornar 'checkout'
-                if (value == 'checkout') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CheckoutScreen(),
-                    ),
-                  );
-                }
-              });
-            },
-            backgroundColor: Colors.black.withValues(alpha: 0.4),
-            child: const Icon(
-              Icons.shopping_cart,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-          if (_cartProvider.itemCount > 0)
-            Positioned(
-              right: 0,
-              top: 0,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFe41d31),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-                child: Text(
-                  '${_cartProvider.itemCount}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
+      // 5. O BADGE DO CARRINHO AGORA É ENVOLVIDO EM UM 'CONSUMER'
+      // Isso garante que ele se atualize em tempo real,
+      // sem precisar do 'setState' na home.
+      floatingActionButton: Consumer<CartProvider>(
+        builder: (context, cart, child) {
+          return Stack(
+            children: [
+              FloatingActionButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    // Passamos o 'cart' do Consumer para o Modal
+                    builder: (context) => CartModal(cartProvider: cart),
+                  ).then((value) {
+                    // 6. ADICIONADO A VERIFICAÇÃO 'MOUNTED'
+                    if (!mounted) return;
+
+                    // O setState() não é mais necessário aqui para
+                    // o badge, pois o Consumer cuida disso.
+
+                    if (value == 'checkout') {
+                      // Usamos a rota nomeada do main.dart
+                      Navigator.of(context).pushNamed('/checkout');
+                    }
+                  });
+                },
+                backgroundColor: Colors.black.withValues(alpha: 0.4),
+                child: const Icon(
+                  Icons.shopping_cart,
+                  color: Colors.white,
+                  size: 28,
                 ),
               ),
-            ),
-        ],
+              if (cart.itemCount > 0) // Usando 'cart.itemCount'
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFe41d31),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 20,
+                      minHeight: 20,
+                    ),
+                    child: Text(
+                      '${cart.itemCount}', // Usando 'cart.itemCount'
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -219,7 +236,8 @@ class _HomePageState extends State<HomePage> {
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: crossAxisCount,
-                                childAspectRatio: 1.0,
+                                childAspectRatio:
+                                    0.85, // Ajustamos isso anteriormente
                                 crossAxisSpacing: 16,
                                 mainAxisSpacing: 16,
                               ),
@@ -228,9 +246,15 @@ class _HomePageState extends State<HomePage> {
                             final product = products[index];
                             return ProductCard(
                               product: product,
-                              cartProvider: _cartProvider,
+                              // 7. PASSAMOS O 'cartProvider' (do listen: false)
+                              cartProvider: cartProvider,
                               onCartUpdated: () {
-                                setState(() {});
+                                // 8. O setState AQUI SÓ É NECESSÁRIO
+                                // SE ALGO *NA HOME* (fora o badge)
+                                // PRECISAR MUDAR.
+                                // O Badge já atualiza sozinho
+                                // por causa do Consumer.
+                                // setState(() {});
                               },
                             );
                           },
@@ -361,6 +385,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showLinkMessage(String message) {
+    if (!mounted) return; // Verificação de 'mounted'
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
