@@ -14,9 +14,25 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  // 1. ADICIONADO UM NÓ DE FOCO para o campo de senha
+  final _passwordFocusNode = FocusNode();
+
+  @override
+  void dispose() {
+    // 2. DESCARTAR O NÓ DE FOCO
+    _passwordFocusNode.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _login() async {
-    // 1. Validação inicial no app
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+    // 1. CORREÇÃO: Usamos .trim() para remover espaços
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text.trim();
+
+    // 2. Validação inicial no app (agora com os valores "limpos")
+    if (email.isEmpty || password.isEmpty) {
       _showFeedbackMessage(
         'Por favor, preencha e-mail e senha.',
         isError: true,
@@ -31,21 +47,18 @@ class _LoginScreenState extends State<LoginScreen> {
     final url = Uri.parse('https://oracleapex.com/ords/bulldog/api/login-user');
 
     try {
-      // 2. Envio dos dados para a API via POST
+      // 3. Envio dos dados para a API via POST (com os valores "limpos")
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'username': _emailController.text,
-          'password': _passwordController.text,
-        }),
+        body: json.encode({'username': email, 'password': password}),
       );
 
       if (!mounted) return;
 
       final responseData = json.decode(response.body);
 
-      // 3. Verificação da resposta da API
+      // 4. Verificação da resposta da API
       if (response.statusCode == 200) {
         // SUCESSO! A API autenticou o usuário.
         // AGORA, a decisão é baseada na "role" que a API enviou.
@@ -87,6 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showFeedbackMessage(String message, {bool isError = false}) {
+    if (!mounted) return; // Garante que o widget ainda está na tela
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -160,10 +174,19 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         keyboardType: TextInputType.emailAddress,
+                        // 3. ADICIONADO: Ao pressionar 'Enter' (ou 'Next'), pula para o campo de senha
+                        textInputAction: TextInputAction.next,
+                        onSubmitted: (_) {
+                          FocusScope.of(
+                            context,
+                          ).requestFocus(_passwordFocusNode);
+                        },
                       ),
                       const SizedBox(height: 20),
                       TextField(
                         controller: _passwordController,
+                        // 4. ADICIONADO: Associa o nó de foco
+                        focusNode: _passwordFocusNode,
                         obscureText: true,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
@@ -180,12 +203,22 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderSide: BorderSide.none,
                           ),
                         ),
+                        // 5. ADICIONADO: Ao pressionar 'Enter' (ou 'Done'), chama a função _login
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) {
+                          if (!_isLoading) {
+                            _login();
+                          }
+                        },
                       ),
                       const SizedBox(height: 40),
                       SizedBox(
                         width: double.infinity,
+                        // Mostra o loading no botão
                         child: ElevatedButton(
-                          onPressed: _login,
+                          onPressed: _isLoading
+                              ? null
+                              : _login, // Desativa o botão durante o loading
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             foregroundColor: Colors.white,
@@ -194,13 +227,22 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: const Text(
-                            'LOGIN',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 3,
+                                  ),
+                                )
+                              : const Text(
+                                  'LOGIN',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -214,6 +256,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: Colors.white,
                             fontSize: 14,
                             decoration: TextDecoration.underline,
+                            decorationColor: Colors.white,
                           ),
                         ),
                       ),
