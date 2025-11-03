@@ -7,6 +7,7 @@ import 'models/product.dart';
 import 'providers/cart_provider.dart'; // 2. IMPORT DO CART_PROVIDER
 
 // Telas do Cliente
+import 'pages/splash_screen.dart'; // 3. IMPORT DA TELA SPLASH
 import 'pages/login_page.dart';
 import 'pages/register_screen.dart';
 import 'pages/home_page.dart';
@@ -21,7 +22,7 @@ import 'pages/admin/admin_reports_screen.dart';
 import 'pages/admin/admin_product_edit_screen.dart';
 
 void main() {
-  // 3. ENVOLVER A APLICAÇÃO COM O PROVIDER (ESSENCIAL)
+  // 4. ENVOLVER A APLICAÇÃO COM O PROVIDER (ESSENCIAL)
   runApp(
     ChangeNotifierProvider(
       create: (context) => CartProvider(),
@@ -58,6 +59,7 @@ class MyApp extends StatelessWidget {
             displayColor: Colors.white,
           ),
         ),
+        // 5. CORREÇÃO DA COR DO TEXTO DA APPBAR (branco)
         appBarTheme: AppBarTheme(
           backgroundColor: cardColor,
           elevation: 0,
@@ -80,16 +82,16 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      // Define a tela de login como a inicial
-      initialRoute: '/login',
+      // 6. ROTA INICIAL MUDADA PARA A SPLASH
+      initialRoute: '/',
 
       // Define todas as rotas do aplicativo
       routes: {
+        '/': (context) => const SplashScreen(), // 7. ROTA DA SPLASH
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => const HomePage(),
         '/checkout': (context) => const CheckoutScreen(),
-        // Rota para a nova tela de Revisão
         '/review': (context) {
           final args =
               ModalRoute.of(context)!.settings.arguments as Map<String, String>;
@@ -103,7 +105,6 @@ class MyApp extends StatelessWidget {
         '/admin/products': (context) => const AdminProductListScreen(),
         '/admin/reports': (context) => const AdminReportsScreen(),
         '/admin/product/edit': (context) {
-          // Pega o argumento (produto) passado pela navegação
           final product =
               ModalRoute.of(context)!.settings.arguments as Product?;
           return AdminProductEditScreen(product: product);

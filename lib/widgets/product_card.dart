@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
-import '../providers/cart_provider.dart'; // 1. IMPORTAR O CARTPROVIDER
-import 'additionals_dialog.dart'; // 2. IMPORTAR O DIALOG
+import '../providers/cart_provider.dart';
+import 'additionals_dialog.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
-  // 3. MODIFICAR OS PARÂMETROS
   final CartProvider cartProvider;
-  final VoidCallback onCartUpdated; // Substitui o onAddToCart
+  final VoidCallback onCartUpdated;
 
   const ProductCard({
     super.key,
@@ -16,17 +15,15 @@ class ProductCard extends StatelessWidget {
     required this.onCartUpdated,
   });
 
-  // 4. MÉTODO PRIVADO PARA MOSTRAR O DIALOG
   void _showAdditionalsDialog(BuildContext context, {required bool isBuyNow}) {
     showDialog(
       context: context,
       builder: (context) => AdditionalsDialog(
         product: product,
         cartProvider: cartProvider,
-        isBuyNow: isBuyNow, // Passa o parâmetro 'true' ou 'false'
+        isBuyNow: isBuyNow,
       ),
     ).then((_) {
-      // Após o dialog fechar, atualiza o contador do carrinho na home
       onCartUpdated();
     });
   }
@@ -37,9 +34,9 @@ class ProductCard extends StatelessWidget {
       color: const Color.fromARGB(106, 46, 45, 45),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 4,
-      // 1. DIMINUÍDO O PADDING GERAL
+      // 1. Padding geral ajustado
       child: Padding(
-        padding: const EdgeInsets.all(12.0), // Antes era 20
+        padding: const EdgeInsets.all(16.0), // Aumentei um pouco (era 12)
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -47,8 +44,8 @@ class ProductCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
               child: Container(
-                // 2. ALTURA DA IMAGEM SIGNIFICATIVAMENTE REDUZIDA
-                height: 150, // Antes era 220
+                // 2. ALTURA DA IMAGEM AUMENTADA (para cortar menos)
+                height: 200, // Antes era 150
                 width: double.infinity,
                 decoration: const BoxDecoration(color: Colors.grey),
                 child: Image.asset(
@@ -67,8 +64,8 @@ class ProductCard extends StatelessWidget {
                 ),
               ),
             ),
-            // 3. ESPAÇAMENTOS REDUZIDOS
-            const SizedBox(height: 8), // Antes era 12
+            // 3. Espaçamentos internos ajustados
+            const SizedBox(height: 10), // Antes era 8
             // Product Name
             Text(
               product.name,
@@ -77,10 +74,11 @@ class ProductCard extends StatelessWidget {
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
-              maxLines: 1, // Garante que não quebre a linha
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4), // Antes era 8
+            const SizedBox(height: 4),
+
             // Product Price
             Text(
               'R\$ ${product.price.toStringAsFixed(2)}',
@@ -90,15 +88,19 @@ class ProductCard extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 4), // Antes era 8
+            const SizedBox(height: 4),
+
             // Product Description
             Text(
               product.description,
               style: const TextStyle(color: Colors.white, fontSize: 14),
-              maxLines: 2, // Antes era 3
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 12), // Antes era 16
+            // 4. ESPAÇAMENTO FLEXÍVEL (para empurrar os botões para baixo)
+            // Isso vai usar o "espaço em branco" que estava sobrando
+            const Spacer(),
+
             // Buttons Row - "Vamos nessa?" and Cart Button
             Row(
               children: [
@@ -113,9 +115,7 @@ class ProductCard extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                      ), // Antes era 12
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('Vamos nessa?'),
                   ),
@@ -132,9 +132,7 @@ class ProductCard extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                      ), // Antes era 12
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Icon(Icons.shopping_cart),
                   ),

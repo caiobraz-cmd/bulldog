@@ -17,8 +17,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
   PaymentMethod? _selectedMethod =
       PaymentMethod.pix; // Começa com Pix selecionado
 
-  // Função para o botão "Finalizar Pedido" (atualmente, só mostra um aviso)
-  void _finishOrder() {
+  // --- MUDANÇA AQUI ---
+  // A função agora é 'async' para esperar o dialog
+  Future<void> _finishOrder() async {
     if (_selectedMethod == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -29,16 +30,53 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return;
     }
 
-    // Lógica de finalização (placeholder)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Pedido finalizado com sucesso! (Simulação)'),
-        backgroundColor: Colors.green[700],
-      ),
+    // Pega o provider ANTES de mostrar o dialog
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    final total = cart.totalPrice;
+
+    // --- DIALOG DE SUCESSO ADICIONADO ---
+    await showDialog(
+      context: context,
+      barrierDismissible: false, // Usuário não pode fechar clicando fora
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1a1a1a),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green),
+              SizedBox(width: 10),
+              Text('Pedido Recebido!'),
+            ],
+          ),
+          content: Text(
+            'Obrigado!\nSeu pedido de R\$ ${total.toStringAsFixed(2)} está sendo preparado e logo sairá para entrega.',
+            style: const TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Fecha o dialog
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text(
+                'OK',
+                style: TextStyle(color: Color(0xFFe41d31)),
+              ),
+            ),
+          ],
+        );
+      },
     );
 
+    // --- Lógica movida para DEPOIS do dialog ---
+    // Verifica se o widget ainda está montado após o 'await'
+    if (!mounted) return;
+
     // Limpa o carrinho e volta para a home
-    Provider.of<CartProvider>(context, listen: false).clearCart();
+    cart.clearCart();
     Navigator.of(
       context,
     ).pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
@@ -120,16 +158,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 1. 'RadioGroup'
+                    // Usando o RadioGroup (forma correta)
                     RadioGroup<PaymentMethod>(
-                      // 2. 'groupValue' E 'onChanged' VIVEM AQUI
                       groupValue: _selectedMethod,
                       onChanged: (PaymentMethod? newValue) {
                         setState(() {
                           _selectedMethod = newValue;
                         });
                       },
-                      // 3. 'children' FOI MUDADO PARA 'child' E USA UMA 'Column'
                       child: Column(
                         children: [
                           // Opção PIX
@@ -181,7 +217,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   // Helper para construir os botões de rádio de pagamento
-  // (Nenhuma mudança necessária aqui, já estava correto)
   Widget _buildPaymentOption({
     required String title,
     required IconData icon,
