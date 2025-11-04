@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // 1. IMPORTAR PROVIDER
+import 'package:provider/provider.dart';
 import '../models/product.dart';
-import '../providers/cart_provider.dart'; // 2. IMPORTAR CART_PROVIDER
+import '../providers/cart_provider.dart';
 import '../services/product_service.dart';
 import '../widgets/product_card.dart';
 import '../widgets/cart_modal.dart';
-// O import do checkout_screen não é mais necessário aqui
+// O import do checkout_screen não é mais necessário aqui,
+// pois a navegação é feita pelo nome da rota ('/checkout').
 
+/// A tela principal do aplicativo para o cliente.
+///
+/// Exibe a lista de produtos disponíveis (lanches) em um [GridView]
+/// e permite ao usuário adicionar itens ao carrinho.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -15,45 +20,53 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // 3. REMOVIDO: final CartProvider _cartProvider = CartProvider();
+  /// Armazena o [Future] que busca os produtos da API.
+  /// Isso evita que a API seja chamada toda vez que o widget é reconstruído.
   late Future<List<Product>> _productsFuture;
 
   @override
   void initState() {
     super.initState();
+    // Inicia a chamada da API assim que a tela é carregada.
     _productsFuture = ProductService.getAllProducts();
   }
 
   @override
   Widget build(BuildContext context) {
-    // 4. O provider é acessado aqui para os 'onPressed'
-    // 'listen: false' é importante fora de 'Consumers'
+    /// Acessa o [CartProvider] aqui (com 'listen: false')
+    /// para passá-lo para os widgets filhos (como [ProductCard] e [CartModal])
+    /// que precisam *executar ações* (como adicionar itens),
+    /// mas sem fazer esta tela inteira se reconstruir.
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
     return Scaffold(
       backgroundColor: Colors.black,
-      // 5. O BADGE DO CARRINHO AGORA É ENVOLVIDO EM UM 'CONSUMER'
-      // Isso garante que ele se atualize em tempo real,
-      // sem precisar do 'setState' na home.
+
+      /// O [FloatingActionButton] (botão do carrinho) é envolvido por um
+      /// [Consumer<CartProvider>].
+      ///
+      /// Isso faz com que *apenas* este widget se reconstrua quando o
+      /// [CartProvider] notifica mudanças (ex: item adicionado/removido),
+      /// atualizando o "badge" (o número) em tempo real.
       floatingActionButton: Consumer<CartProvider>(
         builder: (context, cart, child) {
           return Stack(
             children: [
               FloatingActionButton(
                 onPressed: () {
+                  // Abre o modal do carrinho
                   showDialog(
                     context: context,
-                    // Passamos o 'cart' do Consumer para o Modal
+                    // Passa o 'cart' vindo do Consumer
                     builder: (context) => CartModal(cartProvider: cart),
                   ).then((value) {
-                    // 6. ADICIONADO A VERIFICAÇÃO 'MOUNTED'
+                    // Após o modal fechar, verifica se o widget ainda está na tela.
                     if (!mounted) return;
 
-                    // O setState() não é mais necessário aqui para
-                    // o badge, pois o Consumer cuida disso.
-
+                    // Se o modal retornou o valor 'checkout'
+                    // (acionado pelo botão "Finalizar" no modal),
+                    // navega para a tela de checkout.
                     if (value == 'checkout') {
-                      // Usamos a rota nomeada do main.dart
                       Navigator.of(context).pushNamed('/checkout');
                     }
                   });
@@ -65,7 +78,9 @@ class _HomePageState extends State<HomePage> {
                   size: 28,
                 ),
               ),
-              if (cart.itemCount > 0) // Usando 'cart.itemCount'
+              // Mostra o "badge" (círculo vermelho com o número)
+              // apenas se houver itens no carrinho.
+              if (cart.itemCount > 0)
                 Positioned(
                   right: 0,
                   top: 0,
@@ -80,7 +95,7 @@ class _HomePageState extends State<HomePage> {
                       minHeight: 20,
                     ),
                     child: Text(
-                      '${cart.itemCount}', // Usando 'cart.itemCount'
+                      '${cart.itemCount}', // Lê o total de itens do provider
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -94,6 +109,8 @@ class _HomePageState extends State<HomePage> {
           );
         },
       ),
+
+      // Corpo principal da tela
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -105,19 +122,19 @@ class _HomePageState extends State<HomePage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              const SizedBox(height: 40), // SafeArea replacement
-              // Header with Logo
+              const SizedBox(height: 40), // Espaço para o topo (tipo SafeArea)
+              // Header com a Logo e Título
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    // Logo
                     Center(
                       child: Image.asset(
                         'assets/NETAIO/img/logo.png',
                         width: 250,
                         height: 180,
                         errorBuilder: (context, error, stackTrace) {
+                          // Fallback caso a imagem não carregue
                           return Container(
                             width: 250,
                             height: 180,
@@ -132,8 +149,6 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-
-                    // Title
                     const Text(
                       'Escolha seu lanche',
                       style: TextStyle(
@@ -147,12 +162,13 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              // Products Grid
+              // Grade de Produtos
               Container(
                 padding: const EdgeInsets.all(16),
                 child: FutureBuilder<List<Product>>(
-                  future: _productsFuture,
+                  future: _productsFuture, // Usa o Future iniciado no initState
                   builder: (context, snapshot) {
+                    // Estado de Carregamento
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
                         child: CircularProgressIndicator(
@@ -161,6 +177,7 @@ class _HomePageState extends State<HomePage> {
                       );
                     }
 
+                    // Estado de Erro
                     if (snapshot.hasError) {
                       return Center(
                         child: Column(
@@ -172,7 +189,7 @@ class _HomePageState extends State<HomePage> {
                               size: 64,
                             ),
                             const SizedBox(height: 16),
-                            Text(
+                            const Text(
                               'Erro ao carregar produtos',
                               style: TextStyle(
                                 color: Colors.white,
@@ -182,7 +199,7 @@ class _HomePageState extends State<HomePage> {
                             const SizedBox(height: 8),
                             Text(
                               '${snapshot.error}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 14,
                               ),
@@ -191,6 +208,7 @@ class _HomePageState extends State<HomePage> {
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: () {
+                                // Tenta recarregar os produtos
                                 setState(() {
                                   _productsFuture =
                                       ProductService.getAllProducts();
@@ -206,6 +224,7 @@ class _HomePageState extends State<HomePage> {
                       );
                     }
 
+                    // Estado de Sucesso (vazio)
                     if (!snapshot.hasData || snapshot.data!.isEmpty) {
                       return const Center(
                         child: Text(
@@ -215,8 +234,11 @@ class _HomePageState extends State<HomePage> {
                       );
                     }
 
+                    // Estado de Sucesso (com dados)
                     final products = snapshot.data!;
 
+                    // LayoutBuilder é usado para criar um GridView responsivo
+                    // que muda o número de colunas baseado na largura da tela.
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         int crossAxisCount;
@@ -227,17 +249,18 @@ class _HomePageState extends State<HomePage> {
                         } else if (constraints.maxWidth > 600) {
                           crossAxisCount = 2;
                         } else {
-                          crossAxisCount = 1;
+                          crossAxisCount = 1; // Padrão para mobile
                         }
 
                         return GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true, // Para caber dentro de um Column
+                          physics:
+                              const NeverScrollableScrollPhysics(), // Desabilita o scroll do Grid
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: crossAxisCount,
                                 childAspectRatio:
-                                    0.85, // Ajustamos isso anteriormente
+                                    0.85, // Proporção ajustada para o card
                                 crossAxisSpacing: 16,
                                 mainAxisSpacing: 16,
                               ),
@@ -246,15 +269,12 @@ class _HomePageState extends State<HomePage> {
                             final product = products[index];
                             return ProductCard(
                               product: product,
-                              // 7. PASSAMOS O 'cartProvider' (do listen: false)
                               cartProvider: cartProvider,
                               onCartUpdated: () {
-                                // 8. O setState AQUI SÓ É NECESSÁRIO
-                                // SE ALGO *NA HOME* (fora o badge)
-                                // PRECISAR MUDAR.
-                                // O Badge já atualiza sozinho
-                                // por causa do Consumer.
-                                // setState(() {});
+                                // O Consumer do badge já atualiza sozinho,
+                                // mas o setState é mantido caso a home
+                                // precise se redesenhar por outra razão.
+                                setState(() {});
                               },
                             );
                           },
@@ -265,7 +285,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              // Footer
+              // Footer (Rodapé)
               Container(
                 color: const Color(0xFF1a1a1a),
                 padding: const EdgeInsets.all(20),
@@ -323,7 +343,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Social Media
+                    // Links de Redes Sociais
                     const Text(
                       'Redes sociais',
                       style: TextStyle(
@@ -384,6 +404,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Exibe uma SnackBar (usada para os links do footer).
   void _showLinkMessage(String message) {
     if (!mounted) return; // Verificação de 'mounted'
     ScaffoldMessenger.of(context).showSnackBar(

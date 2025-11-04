@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 
-// Enum para controlar a seleção de pagamento
+/// Enum para definir as opções de forma de pagamento.
 enum PaymentMethod { pix, creditCard, cash }
 
+/// Tela final do fluxo de pedido, onde o cliente escolhe
+/// a forma de pagamento e confirma a compra.
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
 
@@ -13,13 +15,18 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  // Estado para controlar qual método está selecionado
-  PaymentMethod? _selectedMethod =
-      PaymentMethod.pix; // Começa com Pix selecionado
+  /// Armazena o método de pagamento selecionado pelo usuário.
+  /// Começa com [PaymentMethod.pix] como padrão.
+  PaymentMethod? _selectedMethod = PaymentMethod.pix;
 
-  // Função para o botão "Finalizar Pedido" (atualmente, só mostra um aviso)
-  void _finishOrder() {
+  /// Função chamada ao pressionar "FINALIZAR PEDIDO".
+  ///
+  /// Valida se um método foi selecionado, exibe um dialog de sucesso (simulação),
+  /// limpa o carrinho e navega de volta para a tela inicial ('/home').
+  Future<void> _finishOrder() async {
+    // Valida se uma opção foi selecionada
     if (_selectedMethod == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Por favor, selecione uma forma de pagamento.'),
@@ -29,16 +36,55 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return;
     }
 
-    // Lógica de finalização (placeholder)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Pedido finalizado com sucesso! (Simulação)'),
-        backgroundColor: Colors.green[700],
-      ),
+    // Acessa os providers (com 'listen: false') pois estamos dentro de um método.
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    final total = cart.totalPrice;
+    // final auth = Provider.of<AuthProvider>(context, listen: false); // Removido
+    // final userName = auth.userName; // Removido
+
+    // Exibe o dialog de sucesso (simulação)
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      barrierDismissible: false, // Usuário não pode fechar clicando fora
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1a1a1a),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green),
+              SizedBox(width: 10),
+              Text('Pedido Recebido!'),
+            ],
+          ),
+          content: Text(
+            // Mensagem genérica (sem o nome do usuário, conforme revertemos)
+            'Obrigado!\nSeu pedido de R\$ ${total.toStringAsFixed(2)} está sendo preparado e logo sairá para entrega.',
+            style: const TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text(
+                'OK',
+                style: TextStyle(color: Color(0xFFe41d31)),
+              ),
+            ),
+          ],
+        );
+      },
     );
 
-    // Limpa o carrinho e volta para a home
-    Provider.of<CartProvider>(context, listen: false).clearCart();
+    // Garante que o widget ainda está na tela após o 'await' do dialog
+    if (!mounted) return;
+
+    // Limpa o carrinho e navega para a home, finalizando o fluxo.
+    cart.clearCart();
     Navigator.of(
       context,
     ).pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
@@ -48,7 +94,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Widget build(BuildContext context) {
     const primaryColor = Color(0xFFe41d31);
     const cardColor = Color(0xFF1a1a1a);
-    // Pega o carrinho para mostrar o total
+
+    // Acessa o CartProvider (com 'listen: true') para que o total
+    // seja atualizado se algo mudar (embora seja raro nesta tela).
     final cart = Provider.of<CartProvider>(context);
 
     return Scaffold(
@@ -77,7 +125,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 20),
-                    // --- 1. RESUMO DO TOTAL ---
+                    // Card com o resumo do valor total
                     Card(
                       color: cardColor,
                       shape: RoundedRectangleBorder(
@@ -110,7 +158,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                     const SizedBox(height: 40),
 
-                    // --- 2. OPÇÕES DE PAGAMENTO ---
+                    // Título da seção de pagamento
                     const Text(
                       'Forma de Pagamento',
                       style: TextStyle(
@@ -120,31 +168,28 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 1. 'RadioGroup'
+                    // Grupo de opções de pagamento
+                    // Usa [RadioGroup] para gerenciar o estado
+                    // e evitar avisos de deprecação.
                     RadioGroup<PaymentMethod>(
-                      // 2. 'groupValue' E 'onChanged' VIVEM AQUI
                       groupValue: _selectedMethod,
                       onChanged: (PaymentMethod? newValue) {
                         setState(() {
                           _selectedMethod = newValue;
                         });
                       },
-                      // 3. 'children' FOI MUDADO PARA 'child' E USA UMA 'Column'
                       child: Column(
                         children: [
-                          // Opção PIX
                           _buildPaymentOption(
                             title: 'Pix',
                             icon: Icons.qr_code,
                             value: PaymentMethod.pix,
                           ),
-                          // Opção Cartão
                           _buildPaymentOption(
                             title: 'Cartão de Crédito',
                             icon: Icons.credit_card,
                             value: PaymentMethod.creditCard,
                           ),
-                          // Opção Dinheiro
                           _buildPaymentOption(
                             title: 'Dinheiro (na entrega)',
                             icon: Icons.money,
@@ -156,9 +201,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                     const SizedBox(height: 40),
 
-                    // --- 3. BOTÃO FINALIZAR ---
+                    // Botão de Finalizar Pedido
                     ElevatedButton(
-                      onPressed: _finishOrder, // Chama a função de finalizar
+                      onPressed: _finishOrder,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
                         foregroundColor: Colors.white,
@@ -180,8 +225,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  // Helper para construir os botões de rádio de pagamento
-  // (Nenhuma mudança necessária aqui, já estava correto)
+  /// Helper para construir os widgets [RadioListTile] estilizados.
   Widget _buildPaymentOption({
     required String title,
     required IconData icon,
@@ -195,6 +239,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
+        // Destaca a borda do item selecionado
         side: BorderSide(
           color: _selectedMethod == value ? primaryColor : Colors.transparent,
           width: 2,

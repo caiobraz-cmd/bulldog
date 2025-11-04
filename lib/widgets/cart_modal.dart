@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import '../providers/cart_provider.dart';
 
-// 1. CONVERTIDO PARA STATEFULWIDGET
-// (Necessário para corrigir o bug de exclusão de item)
+/// Um [Dialog] que exibe o estado atual do [CartProvider].
+///
+/// Este é um [StatefulWidget] para permitir que a lista de itens
+/// seja atualizada visualmente (usando [setState]) quando um item
+/// é removido, sem a necessidade de fechar e reabrir o modal.
 class CartModal extends StatefulWidget {
+  /// A instância do [CartProvider] (passada da [HomePage]).
   final CartProvider cartProvider;
 
   const CartModal({super.key, required this.cartProvider});
@@ -21,7 +25,8 @@ class _CartModalState extends State<CartModal> {
       child: Container(
         padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize:
+              MainAxisSize.min, // Para o dialog se ajustar ao conteúdo
           children: [
             // Header
             Row(
@@ -43,8 +48,8 @@ class _CartModalState extends State<CartModal> {
             ),
             const SizedBox(height: 16),
 
-            // Cart Items
-            // (Usamos 'widget.cartProvider' por estarmos em um StatefulWidget)
+            // Lista de Itens do Carrinho
+            // (Usa 'widget.cartProvider' para acessar o provider no StatefulWidget)
             if (widget.cartProvider.items.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(40),
@@ -54,6 +59,8 @@ class _CartModalState extends State<CartModal> {
                 ),
               )
             else
+              // [Flexible] garante que a lista não estoure
+              // a altura do [Column]
               Flexible(
                 child: ListView.builder(
                   shrinkWrap: true,
@@ -65,7 +72,7 @@ class _CartModalState extends State<CartModal> {
                       margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
                         title: Text(
-                          item.displayName,
+                          item.displayName, // ex: "Dog Duplo + Bacon"
                           style: const TextStyle(color: Colors.white),
                         ),
                         trailing: Row(
@@ -79,11 +86,12 @@ class _CartModalState extends State<CartModal> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            // 2. CORREÇÃO DO BUG DE EXCLUSÃO
+                            // Botão de Excluir
                             IconButton(
                               onPressed: () {
-                                // Usamos setState para redesenhar o modal
-                                // após remover o item
+                                /// Remove o item do provider e chama [setState]
+                                /// para forçar a reconstrução *deste modal*,
+                                /// atualizando a lista visualmente.
                                 setState(() {
                                   widget.cartProvider.removeItem(index);
                                 });
@@ -126,7 +134,7 @@ class _CartModalState extends State<CartModal> {
               ),
               const SizedBox(height: 16),
 
-              // Action Buttons
+              // Botões de Ação
               Row(
                 children: [
                   Expanded(
@@ -144,10 +152,11 @@ class _CartModalState extends State<CartModal> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      // 3. CONEXÃO COM A TELA DE CHECKOUT
+                      /// Ao clicar em "Finalizar", fecha o modal e
+                      /// retorna o valor 'checkout' para a [HomePage].
+                      /// A [HomePage] está "escutando" esse valor no `.then()`
+                      /// para saber que deve navegar para a tela de checkout.
                       onPressed: () {
-                        // Fecha o modal e retorna o valor 'checkout'
-                        // A HomePage está esperando por esse valor
                         Navigator.of(context).pop('checkout');
                       },
                       style: ElevatedButton.styleFrom(

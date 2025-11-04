@@ -1,13 +1,25 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
-import '../providers/cart_provider.dart'; // 1. IMPORTAR O CARTPROVIDER
-import 'additionals_dialog.dart'; // 2. IMPORTAR O DIALOG
+import '../providers/cart_provider.dart';
+import 'additionals_dialog.dart';
 
+/// Um [Card] customizado para exibir um [Product] na [HomePage].
+///
+/// Este widget exibe a imagem, nome, preço e descrição do produto.
+/// Ele também gerencia a lógica para os dois botões de ação:
+/// 1. "Vamos nessa?" (Fluxo de compra direta).
+/// 2. "Adicionar ao Carrinho" (Fluxo de compra múltipla).
 class ProductCard extends StatelessWidget {
+  /// Os dados do produto a serem exibidos.
   final Product product;
-  // 3. MODIFICAR OS PARÂMETROS
+
+  /// A instância do provider do carrinho, necessária para o [AdditionalsDialog].
   final CartProvider cartProvider;
-  final VoidCallback onCartUpdated; // Substitui o onAddToCart
+
+  /// Um callback [VoidCallback] que é chamado quando o [AdditionalsDialog]
+  /// é fechado. Usado pela [HomePage] para chamar `setState` e
+  /// atualizar o badge do carrinho.
+  final VoidCallback onCartUpdated;
 
   const ProductCard({
     super.key,
@@ -16,17 +28,21 @@ class ProductCard extends StatelessWidget {
     required this.onCartUpdated,
   });
 
-  // 4. MÉTODO PRIVADO PARA MOSTRAR O DIALOG
+  /// Método helper para exibir o [AdditionalsDialog].
+  ///
+  /// Controla qual fluxo de usuário será ativado com base no
+  /// parâmetro [isBuyNow].
   void _showAdditionalsDialog(BuildContext context, {required bool isBuyNow}) {
     showDialog(
       context: context,
       builder: (context) => AdditionalsDialog(
         product: product,
         cartProvider: cartProvider,
-        isBuyNow: isBuyNow, // Passa o parâmetro 'true' ou 'false'
+        isBuyNow: isBuyNow, // Passa 'true' para "Vamos nessa?"
       ),
     ).then((_) {
-      // Após o dialog fechar, atualiza o contador do carrinho na home
+      // Após o dialog fechar (seja adicionando ou comprando),
+      // chama o callback para notificar a HomePage.
       onCartUpdated();
     });
   }
@@ -34,27 +50,27 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: const Color.fromARGB(106, 46, 45, 45),
+      color: const Color.fromARGB(106, 46, 45, 45), // Fundo semitransparente
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 4,
-      // 1. DIMINUÍDO O PADDING GERAL
       child: Padding(
-        padding: const EdgeInsets.all(12.0), // Antes era 20
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product Image
+            // Imagem do Produto
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
               child: Container(
-                // 2. ALTURA DA IMAGEM SIGNIFICATIVAMENTE REDUZIDA
-                height: 150, // Antes era 220
+                height: 200, // Altura ajustada para a imagem
                 width: double.infinity,
                 decoration: const BoxDecoration(color: Colors.grey),
                 child: Image.asset(
-                  product.imagePath,
+                  product
+                      .imagePath, // 'imagePath' é um getter no modelo Product
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
+                    // Fallback de imagem
                     return Container(
                       color: Colors.grey[300],
                       child: const Icon(
@@ -67,9 +83,9 @@ class ProductCard extends StatelessWidget {
                 ),
               ),
             ),
-            // 3. ESPAÇAMENTOS REDUZIDOS
-            const SizedBox(height: 8), // Antes era 12
-            // Product Name
+            const SizedBox(height: 10),
+
+            // Nome do Produto
             Text(
               product.name,
               style: const TextStyle(
@@ -77,11 +93,12 @@ class ProductCard extends StatelessWidget {
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
-              maxLines: 1, // Garante que não quebre a linha
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4), // Antes era 8
-            // Product Price
+            const SizedBox(height: 4),
+
+            // Preço do Produto
             Text(
               'R\$ ${product.price.toStringAsFixed(2)}',
               style: const TextStyle(
@@ -90,18 +107,26 @@ class ProductCard extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 4), // Antes era 8
-            // Product Description
+            const SizedBox(height: 4),
+
+            // Descrição/Ingredientes
             Text(
-              product.description,
+              product.description, // 'description' é um getter no modelo
               style: const TextStyle(color: Colors.white, fontSize: 14),
-              maxLines: 2, // Antes era 3
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 12), // Antes era 16
-            // Buttons Row - "Vamos nessa?" and Cart Button
+
+            /// [Spacer] é usado para preencher o espaço vertical vazio
+            /// no [Card], empurrando os botões para a parte inferior.
+            /// Isso garante um layout consistente, independentemente do
+            /// tamanho da descrição.
+            const Spacer(),
+
+            // Linha de Botões
             Row(
               children: [
+                /// Botão "Vamos nessa?" (Compra Direta)
                 Expanded(
                   flex: 2,
                   child: ElevatedButton(
@@ -113,14 +138,14 @@ class ProductCard extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                      ), // Antes era 12
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('Vamos nessa?'),
                   ),
                 ),
                 const SizedBox(width: 8),
+
+                /// Botão "Adicionar ao Carrinho"
                 Expanded(
                   flex: 1,
                   child: ElevatedButton(
@@ -132,9 +157,7 @@ class ProductCard extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                      ), // Antes era 12
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Icon(Icons.shopping_cart),
                   ),

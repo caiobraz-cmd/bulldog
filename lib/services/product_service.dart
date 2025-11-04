@@ -6,7 +6,15 @@ import 'package:http/http.dart' as http;
 import '../models/product.dart';
 import 'api_service.dart';
 
+/// Camada de serviço (lógica de negócios) para gerenciar os produtos.
+///
+/// Esta classe age como um intermediário entre a UI (as telas)
+/// e a camada de dados ([ApiService] ou chamadas http diretas).
+///
+/// Ela contém a lógica para buscar, criar, atualizar e deletar produtos,
+/// além de fornecer dados de "fallback" (plano B) caso a API falhe.
 class ProductService {
+  /// URL base para os endpoints de produtos (para CUD - Create, Update, Delete).
   static const String baseUrl = 'https://oracleapex.com/ords/bulldog/api';
 
   /// 🔹 Buscar todos os produtos
@@ -76,6 +84,7 @@ class ProductService {
         body: body,
       );
 
+      // 201 (Created) é a resposta padrão para um POST bem-sucedido
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (response.body.isNotEmpty) {
           final jsonData = json.decode(response.body);

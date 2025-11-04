@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+/// Tela principal do painel administrativo (Dashboard).
+///
+/// Esta tela serve como o menu central para o administrador,
+/// oferecendo navegação para as seções de "Gerenciar Produtos"
+/// e "Ver Relatórios".
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
 
@@ -14,6 +19,8 @@ class AdminDashboardScreen extends StatelessWidget {
           0xFF1a1a1a,
         ), // Cor escura para combinar com o tema
         actions: [
+          /// Botão de Logout
+          /// Desconecta o admin e o retorna para a tela de login.
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
@@ -34,12 +41,12 @@ class AdminDashboardScreen extends StatelessWidget {
             colors: [Colors.black, Color(0xFF9c0707)],
           ),
         ),
-        // 1. Usando 'Align' para subir o conteúdo
+        // Alinha o conteúdo no topo (para web/telas maiores)
         child: Align(
           alignment: Alignment.topCenter,
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(32.0),
-            // 2. Limitando a largura para web
+            // Limita a largura máxima do conteúdo em telas grandes
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 450),
               child: Column(
@@ -47,7 +54,7 @@ class AdminDashboardScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 40),
-                  // 3. LOGO ADICIONADA
+                  // Logo
                   Image.asset(
                     'assets/NETAIO/img/logo.png', // O mesmo caminho da tela de Login
                     width: 250,
@@ -62,7 +69,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 40),
 
-                  // Botão para Gerenciar Produtos
+                  /// Botão de navegação para "Gerenciar Produtos"
                   ElevatedButton.icon(
                     icon: const Icon(Icons.edit_document),
                     label: const Text('GERENCIAR PRODUTOS'),
@@ -84,7 +91,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // Botão para Ver Relatórios
+                  /// Botão de navegação para "Ver Relatórios"
                   ElevatedButton.icon(
                     icon: const Icon(Icons.bar_chart),
                     label: const Text('VER RELATÓRIOS'),

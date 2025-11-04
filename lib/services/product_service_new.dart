@@ -2,6 +2,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/product.dart';
 
+/// Camada de serviço (lógica de negócios) para gerenciar os produtos.
+///
+/// Esta classe age como um intermediário entre a UI (as telas)
+/// e a camada de dados ([ApiService]). Isso permite adicionar
+/// lógica extra, como o "fallback" (plano B) de dados estáticos.
 class ProductService {
   // 👉 Coloque aqui a URL correta do seu endpoint APEX
   static const String _baseUrl =
@@ -82,5 +87,25 @@ class ProductService {
         imageBase64: '',
       ),
     ];
+  }
+
+  // TODO: Implementar as funções de Criar e Atualizar
+  // que chamarão o ApiService.
+
+  /// (Pendente) Envia um novo produto para a API.
+  static Future<void> createProduct(Map<String, dynamic> productData) async {
+    // TODO: Chamar o ApiService.createProduct(productData)
+    print('Simulando a CRIAÇÃO do produto na API...');
+    // await ApiService.createProduct(productData);
+  }
+
+  /// (Pendente) Envia dados atualizados de um produto para a API.
+  static Future<void> updateProduct(
+    int id,
+    Map<String, dynamic> productData,
+  ) async {
+    // TODO: Chamar o ApiService.updateProduct(id, productData)
+    print('Simulando a ATUALIZAÇÃO do produto $id na API...');
+    // await ApiService.updateProduct(id, productData);
   }
 }

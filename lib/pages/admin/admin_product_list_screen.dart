@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import '../../models/product.dart';
 import '../../services/product_service.dart';
 
+/// Tela administrativa para listar e gerenciar todos os produtos.
+///
+/// Permite ao admin ver a lista de produtos cadastrados,
+/// navegar para a tela de edição de um produto existente,
+/// ou navegar para a tela de criação de um novo produto.
 class AdminProductListScreen extends StatefulWidget {
   const AdminProductListScreen({super.key});
 
@@ -10,6 +15,9 @@ class AdminProductListScreen extends StatefulWidget {
 }
 
 class _AdminProductListScreenState extends State<AdminProductListScreen> {
+  /// Armazena o [Future] que busca os produtos da API.
+  /// Usar um [Future] no state evita que a API seja chamada
+  /// desnecessariamente a cada reconstrução do widget.
   late Future<List<Product>> _productsFuture;
 
   @override
@@ -92,12 +100,14 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
+          // Gradiente padrão do app
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [Colors.black, Color(0xFF9c0707)],
           ),
         ),
+        // Alinha o conteúdo no topo e limita a largura
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
@@ -105,12 +115,14 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
             child: FutureBuilder<List<Product>>(
               future: _productsFuture,
               builder: (context, snapshot) {
+                // Estado de Carregamento
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(color: primaryColor),
                   );
                 }
 
+                // Estado de Erro
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
@@ -120,6 +132,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                   );
                 }
 
+                // Estado de Sucesso (vazio)
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(
                     child: Text(
@@ -129,6 +142,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                   );
                 }
 
+                // Estado de Sucesso (com dados)
                 final products = snapshot.data!;
 
                 return ListView.builder(
@@ -136,6 +150,8 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                   itemCount: products.length,
                   itemBuilder: (context, index) {
                     final product = products[index];
+
+                    // Constrói o card de produto (baseado no mock-up da Pág. 14)
                     return Card(
                       color: const Color(0xFF2e2d2d),
                       margin: const EdgeInsets.only(bottom: 12),
@@ -192,6 +208,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
           ),
         ),
       ),
+      // Botão flutuante para "Cadastrar Novo Produto"
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToEditScreen(null),
         label: const Text('CADASTRAR NOVO PRODUTO'),
