@@ -1,14 +1,16 @@
 class Product {
-  final int seqId;
-  final String name;
-  final double price;
-  final String ingredients;
+  int seqId;
+  String name;
+  double price;
+  String ingredients;
+  String? imageBase64; // <--- agora é variável normal, pode ser alterada
 
   Product({
     required this.seqId,
     required this.name,
     required this.price,
     required this.ingredients,
+    this.imageBase64,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -17,6 +19,7 @@ class Product {
       name: json['ds_nome'] as String,
       price: (json['preco'] as num).toDouble(),
       ingredients: json['ingredientes'] as String,
+      imageBase64: json['imagem_base64'] as String?, // campo vindo do banco
     );
   }
 
@@ -26,15 +29,20 @@ class Product {
       'ds_nome': name,
       'preco': price,
       'ingredientes': ingredients,
+      'imagem_base64': imageBase64,
     };
   }
 
   String get id => seqId.toString();
   String get description => ingredients;
 
-  // Para manter compatibilidade com o código existente
+  // 🖼️ Agora compatível: se tiver imagem vinda da API, retorna ela
   String get imagePath {
-    // Mapeamento simples baseado no nome do produto
+    if (imageBase64 != null && imageBase64!.isNotEmpty) {
+      return imageBase64!; // usado diretamente para mostrar imagem em base64
+    }
+
+    // 🔙 Caso contrário, usa as imagens antigas
     final normalizedName = name.toLowerCase();
     if (normalizedName.contains('dog simples')) {
       return 'assets/NETAIO/img/hotdogsimples.jpg';
@@ -52,7 +60,6 @@ class Product {
     } else if (normalizedName.contains('burguer')) {
       return 'assets/NETAIO/img/burguer.jpg';
     }
-    // Imagem padrão
     return 'assets/NETAIO/img/hotdogsimples.jpg';
   }
 
@@ -89,7 +96,6 @@ class Additional {
   Additional({required this.name, required this.price});
 }
 
-// Modelo para a resposta da API
 class ApiResponse {
   final List<Product> items;
   final bool hasMore;
