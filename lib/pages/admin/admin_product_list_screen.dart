@@ -26,27 +26,65 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
     _productsFuture = ProductService.getAllProducts();
   }
 
-  /// Navega para a tela de edição/criação de produto ([AdminProductEditScreen]).
-  ///
-  /// Se [product] for `null`, a tela é aberta em modo "Criar".
-  /// Se [product] for fornecido, a tela é aberta em modo "Editar".
-  ///
-  /// Após a tela de edição ser fechada (com [Navigator.pop]),
-  /// o `.then()` é executado, recarregando a lista de produtos
-  /// para exibir as novas alterações.
   void _navigateToEditScreen([Product? product]) {
-    Navigator.of(context)
-        .pushNamed(
-          '/admin/product/edit',
-          arguments: product, // Envia o produto (ou null) para a nova tela
-        )
-        .then((_) {
-          // Atualiza a lista quando a tela de edição é fechada.
-          // Isso garante que a lista mostre o produto novo/editado.
-          setState(() {
-            _productsFuture = ProductService.getAllProducts();
-          });
+    Navigator.of(
+      context,
+    ).pushNamed('/admin/product/edit', arguments: product).then((_) {
+      // Recarrega lista ao voltar
+      setState(() {
+        _productsFuture = ProductService.getAllProducts();
+      });
+    });
+  }
+
+  /// 🔹 Função para "deletar" (soft delete)
+  void _deleteProduct(int id, String name) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF2e2d2d),
+        title: const Text(
+          'Excluir Produto',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          'Deseja realmente desativar "$name"?',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Desativar',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await ProductService.deleteProduct(id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Produto "$name" desativado com sucesso!')),
+        );
+        setState(() {
+          _productsFuture = ProductService.getAllProducts();
         });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao desativar produto: $e')));
+    }
   }
 
   @override
@@ -73,9 +111,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 800,
-            ), // Limite de largura para web/tablet
+            constraints: const BoxConstraints(maxWidth: 800),
             child: FutureBuilder<List<Product>>(
               future: _productsFuture,
               builder: (context, snapshot) {
@@ -141,15 +177,27 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        trailing: ElevatedButton(
-                          onPressed: () => _navigateToEditScreen(product),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(
-                              0xFF404040,
-                            ), // Cor escura (EDITAR)
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('EDITAR'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () => _navigateToEditScreen(product),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF404040),
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('EDITAR'),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Colors.redAccent,
+                              ),
+                              onPressed: () =>
+                                  _deleteProduct(product.seqId, product.name),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -162,7 +210,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
       ),
       // Botão flutuante para "Cadastrar Novo Produto"
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _navigateToEditScreen(null), // 'null' = Modo Criar
+        onPressed: () => _navigateToEditScreen(null),
         label: const Text('CADASTRAR NOVO PRODUTO'),
         icon: const Icon(Icons.add),
         backgroundColor: primaryColor,

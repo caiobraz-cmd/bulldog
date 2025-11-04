@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import '../models/product.dart';
 import 'api_service.dart';
@@ -14,107 +17,177 @@ class ProductService {
   /// URL base para os endpoints de produtos (para CUD - Create, Update, Delete).
   static const String baseUrl = 'https://oracleapex.com/ords/bulldog/api';
 
-  /// Busca todos os produtos.
-  ///
-  /// Tenta buscar os produtos da [ApiService]. Se a chamada falhar
-  /// (ex: erro de rede, API offline), ele retorna uma lista de produtos
-  /// estáticos ([_getFallbackProducts]) para que o app continue funcionando.
+  /// 🔹 Buscar todos os produtos
   static Future<List<Product>> getAllProducts() async {
     try {
-      // Tenta buscar da API
-      return await ApiService.getProducts();
+      final response = await http.get(Uri.parse('$baseUrl/produtos'));
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+
+        // 👇 APEX retorna {"items": [...]}, tratamos isso
+        final List<dynamic> jsonList =
+            decoded is Map && decoded.containsKey('items')
+            ? decoded['items']
+            : (decoded as List<dynamic>);
+
+        return jsonList.map((jsonItem) {
+          return Product(
+            seqId: jsonItem['seq_id'] ?? 0,
+            name: jsonItem['ds_nome'] ?? 'Sem nome',
+            price: (jsonItem['preco'] ?? 0).toDouble(),
+            ingredients: jsonItem['ds_descricao'] ?? '',
+            imageBase64: jsonItem['imagem'], // pode ser null
+          );
+        }).toList();
+      } else {
+        throw Exception(
+          'Falha ao carregar produtos: ${response.statusCode}\n${response.body}',
+        );
+      }
     } catch (e) {
-      // Se a API falhar, retorna os dados estáticos de "fallback".
-      print('API de getProducts falhou, usando dados de fallback: $e');
+      print('❌ Erro ao carregar produtos: $e');
       return _getFallbackProducts();
     }
   }
 
-  /// Retorna a lista de adicionais (atualmente estática).
+  /// 🔹 Buscar adicionais
   static List<Additional> getAdditionals() {
     return ApiService.getAdditionals();
   }
 
-  /// Cria um novo produto no banco de dados via API.
-  ///
-  /// Envia os [productData] (um mapa) para o endpoint '/produtos' via POST.
-  /// A API do APEX deve ser configurada para mapear 'ds_nome', 'preco', etc.
+  /// 🔹 Criar novo produto (tratando ausência de JSON na resposta)
   static Future<Product> createProduct(Map<String, dynamic> productData) async {
     try {
+      String? base64Image;
+
+      // Converte imagem dependendo da plataforma
+      if (productData['image'] != null) {
+        if (kIsWeb && productData['image'] is Uint8List) {
+          base64Image = base64Encode(productData['image']);
+        } else if (productData['image'] is File) {
+          final bytes = await (productData['image'] as File).readAsBytes();
+          base64Image = base64Encode(bytes);
+        }
+      }
+
+      final body = jsonEncode({
+        'ds_nome': productData['name'],
+        'preco': productData['price'],
+        'ds_descricao': productData['description'],
+        'imagem': base64Image, // ok se null
+      });
+
       final response = await http.post(
         Uri.parse('$baseUrl/produtos'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          // Mapeia os nomes do app (ex: 'name') para os nomes da API (ex: 'ds_nome')
-          'ds_nome': productData['name'],
-          'preco': productData['price'],
-          'ingredientes': productData['description'],
-          // TODO: O 'imagePath' não está sendo enviado?
-        }),
+        body: body,
       );
 
       // 201 (Created) é a resposta padrão para um POST bem-sucedido
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final jsonData = json.decode(response.body);
-        return Product.fromJson(jsonData); // Retorna o produto criado
+        if (response.body.isNotEmpty) {
+          final jsonData = json.decode(response.body);
+          return Product.fromJson(jsonData);
+        } else {
+          return Product(
+            seqId: 0,
+            name: productData['name'],
+            price: productData['price'],
+            ingredients: productData['description'] ?? '',
+            imageBase64: base64Image,
+          );
+        }
       } else {
-        throw Exception('Falha ao criar produto: ${response.statusCode}');
+        throw Exception(
+          'Falha ao criar produto: ${response.statusCode}\n${response.body}',
+        );
       }
     } catch (e) {
       throw Exception('Erro ao criar produto: $e');
     }
   }
 
-  /// Atualiza um produto existente no banco de dados via API.
-  ///
-  /// Envia os [productData] para o endpoint '/produtos/[productId]' via PUT.
+  /// 🔹 Atualizar produto existente (tratando resposta vazia)
   static Future<Product> updateProduct(
     int productId,
     Map<String, dynamic> productData,
   ) async {
     try {
+      String? base64Image;
+
+      if (productData['image'] != null) {
+        if (kIsWeb && productData['image'] is Uint8List) {
+          base64Image = base64Encode(productData['image']);
+        } else if (productData['image'] is File) {
+          final bytes = await (productData['image'] as File).readAsBytes();
+          base64Image = base64Encode(bytes);
+        }
+      }
+
+      final body = jsonEncode({
+        'ds_nome': productData['name'],
+        'preco': productData['price'],
+        'ds_descricao': productData['description'],
+        'imagem': base64Image,
+      });
+
       final response = await http.put(
         Uri.parse('$baseUrl/produtos/$productId'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'ds_nome': productData['name'],
-          'preco': productData['price'],
-          'ingredientes': productData['description'],
-        }),
+        body: body,
       );
 
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        return Product.fromJson(jsonData); // Retorna o produto atualizado
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.body.isNotEmpty) {
+          final jsonData = json.decode(response.body);
+          return Product.fromJson(jsonData);
+        } else {
+          return Product(
+            seqId: productId,
+            name: productData['name'],
+            price: productData['price'],
+            ingredients: productData['description'] ?? '',
+            imageBase64: base64Image,
+          );
+        }
       } else {
-        throw Exception('Falha ao atualizar produto: ${response.statusCode}');
+        throw Exception(
+          'Falha ao atualizar produto: ${response.statusCode}\n${response.body}',
+        );
       }
     } catch (e) {
       throw Exception('Erro ao atualizar produto: $e');
     }
   }
 
-  /// Deleta um produto do banco de dados via API.
-  ///
-  /// Realiza uma chamada DELETE para o endpoint '/produtos/[productId]'.
+  /// 🔹 Deletar produto
+  /// 🔹 "Deletar" produto (soft delete → SN_ATIVO = 'N')
+  /// 🔹 Soft delete (desativar produto)
   static Future<void> deleteProduct(int productId) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/produtos/$productId'),
+      final response = await http.put(
+        Uri.parse('$baseUrl/produtos/$productId/desativar'),
         headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({}), // 👈 corpo vazio para evitar erro 400
       );
 
-      // 200 (OK) ou 204 (No Content) são respostas de sucesso para DELETE
-      if (response.statusCode != 200 && response.statusCode != 204) {
-        throw Exception('Falha ao deletar produto: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('✅ Produto desativado: ${data['message']}');
+      } else if (response.statusCode == 404) {
+        throw Exception('Produto não encontrado.');
+      } else {
+        throw Exception(
+          'Falha ao desativar produto: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
-      throw Exception('Erro ao deletar produto: $e');
+      throw Exception('Erro ao desativar produto: $e');
     }
   }
 
-  /// Retorna uma lista estática de produtos para "fallback".
-  /// Usado quando a API [getAllProducts] falha.
+  /// 🔹 Produtos de fallback (caso a API falhe)
   static List<Product> _getFallbackProducts() {
     return [
       Product(

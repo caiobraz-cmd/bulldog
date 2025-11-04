@@ -1,23 +1,18 @@
 /// Representa a estrutura de um produto (lanche)
 /// vindo da API do Oracle APEX.
 class Product {
-  /// O Identificador único do produto (ex: 1, 2, 3).
-  final int seqId;
-
-  /// O nome de exibição do produto (ex: "Dog Simples").
-  final String name;
-
-  /// O preço base do produto.
-  final double price;
-
-  /// A descrição dos ingredientes do produto.
-  final String ingredients;
+  int seqId;
+  String name;
+  double price;
+  String ingredients;
+  String? imageBase64; // <--- agora é variável normal, pode ser alterada
 
   Product({
     required this.seqId,
     required this.name,
     required this.price,
     required this.ingredients,
+    this.imageBase64,
   });
 
   /// Construtor factory para criar uma instância de [Product]
@@ -28,6 +23,7 @@ class Product {
       name: json['ds_nome'] as String,
       price: (json['preco'] as num).toDouble(),
       ingredients: json['ingredientes'] as String,
+      imageBase64: json['imagem_base64'] as String?, // campo vindo do banco
     );
   }
 
@@ -39,6 +35,7 @@ class Product {
       'ds_nome': name,
       'preco': price,
       'ingredientes': ingredients,
+      'imagem_base64': imageBase64,
     };
   }
 
@@ -48,10 +45,13 @@ class Product {
   /// Getter para a descrição (para compatibilidade).
   String get description => ingredients;
 
-  /// Getter que determina qual imagem local deve ser usada
-  /// com base no nome do produto.
+  // 🖼️ Agora compatível: se tiver imagem vinda da API, retorna ela
   String get imagePath {
-    // Mapeamento simples baseado no nome do produto
+    if (imageBase64 != null && imageBase64!.isNotEmpty) {
+      return imageBase64!; // usado diretamente para mostrar imagem em base64
+    }
+
+    // 🔙 Caso contrário, usa as imagens antigas
     final normalizedName = name.toLowerCase();
     if (normalizedName.contains('dog simples')) {
       return 'assets/NETAIO/img/hotdogsimples.jpg';
@@ -69,7 +69,6 @@ class Product {
     } else if (normalizedName.contains('burguer')) {
       return 'assets/NETAIO/img/burguer.jpg';
     }
-    // Imagem padrão
     return 'assets/NETAIO/img/hotdogsimples.jpg';
   }
 
@@ -118,8 +117,6 @@ class Additional {
   Additional({required this.name, required this.price});
 }
 
-/// Modelo para desserializar a resposta padrão da API do Oracle APEX
-/// (especificamente a que retorna uma lista de produtos).
 class ApiResponse {
   /// A lista de produtos retornada na página atual.
   final List<Product> items;

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../services/image_picker_helper.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../models/product.dart';
 import '../../services/product_service.dart'; // Importado para a lógica de 'saveForm'
 
@@ -100,8 +102,7 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
         'name': name,
         'description': description,
         'price': price,
-        'imagePath': imagePath,
-        // TODO: Adaptar este mapa ao modelo de dados exato da API.
+        'image': widget.product?.imageBase64 ?? _imagePathController.text,
       };
 
       // 5. Chama o Service (Lógica de API pendente)
@@ -258,7 +259,76 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // --- Campo Caminho da Imagem ---
+                      // --- CAMPO CAMINHO DA IMAGEM ---
+                      const SizedBox(height: 8),
+                      // botão para escolher arquivo (opcional)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _isLoading
+                              ? null
+                              : () async {
+                                  // usa file_picker para obter um arquivo (mobile/web)
+                                  try {
+                                    try {
+                                      final base64Image =
+                                          await ImagePickerHelper.pickImageAsBase64();
+
+                                      if (base64Image != null) {
+                                        setState(() {
+                                          _imagePathController.text =
+                                              'Imagem selecionada';
+                                        });
+
+                                        // Armazena a imagem convertida junto com os dados do produto
+                                        widget.product?.imageBase64 =
+                                            base64Image; // se existir atributo no modelo
+                                      } else {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Nenhuma imagem selecionada.',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Erro ao selecionar imagem: $e',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Erro ao selecionar imagem: $e',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                          icon: const Icon(
+                            Icons.upload_file,
+                            color: Colors.white,
+                          ),
+                          label: const Text(
+                            'Escolher imagem',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.white24),
+                          ),
+                        ),
+                      ),
+
                       TextFormField(
                         controller: _imagePathController,
                         style: const TextStyle(color: Colors.white),
