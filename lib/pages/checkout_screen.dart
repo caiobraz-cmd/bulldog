@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
-// Esta tela agora é um StatefulWidget para controlar os campos de texto
+/// Tela para a coleta do endereço e observações do cliente.
+///
+/// Este é o primeiro passo do processo de finalização do pedido,
+/// onde o usuário insere as informações de entrega.
+/// Os dados coletados são então passados para a [ReviewOrderScreen].
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
 
@@ -9,9 +13,11 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  // Controladores para os campos
+  /// Controladores para os campos de texto.
   final _addressController = TextEditingController();
   final _addressObservationController = TextEditingController();
+
+  /// Chave global para validar o formulário.
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -21,15 +27,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.dispose();
   }
 
+  /// Valida o formulário e navega para a tela de revisão.
   void _goToReview() {
-    // Valida o formulário
+    // Verifica se o formulário (apenas o campo de endereço) é válido.
     if (_formKey.currentState?.validate() ?? false) {
-      // Se válido, navega para a tela de revisão
+      // Se for válido, navega para a rota '/review'
+      // e passa os dados como argumentos.
       Navigator.of(context).pushNamed(
         '/review',
         arguments: {
-          'address': _addressController.text,
-          'addressObservation': _addressObservationController.text,
+          'address': _addressController.text.trim(),
+          'addressObservation': _addressObservationController.text.trim(),
         },
       );
     }
@@ -49,6 +57,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
+          // Gradiente padrão do app
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -59,16 +68,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           alignment: Alignment.topCenter,
           child: SingleChildScrollView(
             child: ConstrainedBox(
+              // Limita a largura máxima em telas maiores (web/tablet)
               constraints: const BoxConstraints(maxWidth: 600),
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
-                // Adicionado um Form para validação
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 20),
+                      // Logo
                       Center(
                         child: Image.asset(
                           'assets/NETAIO/img/logo.png',
@@ -76,7 +86,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           height: 180,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(
-                              Icons.home_work, // Ícone de endereço
+                              Icons.home_work, // Ícone de fallback
                               size: 100,
                               color: Colors.white,
                             );
@@ -84,6 +94,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ),
                       ),
                       const SizedBox(height: 40),
+
+                      // Campo de Endereço
                       TextFormField(
                         controller: _addressController,
                         decoration: _buildInputDecoration(
@@ -102,6 +114,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         },
                       ),
                       const SizedBox(height: 24),
+
+                      // Campo de Observação do Endereço
                       TextFormField(
                         controller: _addressObservationController,
                         decoration: _buildInputDecoration(
@@ -114,8 +128,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         maxLines: 2,
                       ),
                       const SizedBox(height: 40),
+
+                      // Botão para ir para a Revisão
                       ElevatedButton(
-                        onPressed: _goToReview, // Chama a função
+                        onPressed: _goToReview, // Chama a validação e navegação
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColor,
                           foregroundColor: Colors.white,
@@ -125,7 +141,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        // Texto do botão atualizado
                         child: const Text('REVISAR PEDIDO'),
                       ),
                     ],
@@ -139,7 +154,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // Helper de decoração
+  /// Helper para construir a decoração padrão dos [TextFormField] desta tela.
   InputDecoration _buildInputDecoration(
     String label,
     String hint,

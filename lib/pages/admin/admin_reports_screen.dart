@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+/// Tela administrativa para visualização de relatórios.
+///
+/// Permite ao admin filtrar saídas por período e visualizar
+/// um histórico de todas as saídas de estoque (atualmente com dados simulados).
 class AdminReportsScreen extends StatefulWidget {
   const AdminReportsScreen({super.key});
 
@@ -8,13 +12,15 @@ class AdminReportsScreen extends StatefulWidget {
 }
 
 class _AdminReportsScreenState extends State<AdminReportsScreen> {
-  // Controladores para os filtros de data
+  /// Controladores para os campos de texto de data "De:" e "Até:".
   final TextEditingController _startDateController = TextEditingController();
   final TextEditingController _endDateController = TextEditingController();
 
-  // Função 'placeholder' para buscar os relatórios
+  /// Função (placeholder) para buscar os relatórios na API
+  /// com base nas datas selecionadas.
   void _fetchReports() {
-    // com base nas datas selecionadas.
+    // TODO: Implementar a lógica de busca na API usando
+    // _startDateController.text e _endDateController.text.
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Buscando relatórios... (Lógica não implementada)'),
@@ -23,7 +29,8 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     );
   }
 
-  // Função 'placeholder' para mostrar um seletor de data
+  /// Exibe um [showDatePicker] para selecionar uma data e
+  /// atualiza o [controller] fornecido com a data formatada.
   Future<void> _selectDate(
     BuildContext context,
     TextEditingController controller,
@@ -33,10 +40,13 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
+      // TODO: Implementar um tema escuro/vermelho para o DatePicker
+      // para combinar com a identidade visual do app.
     );
+
     if (picked != null) {
       setState(() {
-        // Formata a data (ex: 03/11/2025)
+        // Formata a data para o padrão dd/MM/yyyy
         controller.text =
             "${picked.day.toString().padLeft(2, '0')}/"
             "${picked.month.toString().padLeft(2, '0')}/"
@@ -67,17 +77,19 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
+          // Gradiente padrão do app
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [Colors.black, Color(0xFF9c0707)],
           ),
         ),
-        // Aplicando o padrão de alinhamento e largura
+        // Alinha o conteúdo no topo e limita a largura
         child: Align(
           alignment: Alignment.topCenter,
           child: SingleChildScrollView(
             child: ConstrainedBox(
+              // Limita a largura máxima em telas maiores
               constraints: const BoxConstraints(maxWidth: 800),
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -85,21 +97,18 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 20),
-                    // --- 1. FILTRO POR PERÍODO (Baseado no PDF, Página 8) ---
+
+                    /// Card para o filtro "Relatório por Período"
                     _buildReportCard(
                       cardColor: cardColor,
-                      textFieldColor: textFieldColor,
-                      primaryColor: primaryColor,
                       title: 'Relatório por Período',
                       child: _buildDateFilter(textFieldColor, primaryColor),
                     ),
                     const SizedBox(height: 32),
 
-                    // --- 2. RELATÓRIO DE SAÍDAS (Baseado no PDF, Página 8) ---
+                    /// Card para o "Histórico de Saídas de Estoque"
                     _buildReportCard(
                       cardColor: cardColor,
-                      textFieldColor: textFieldColor,
-                      primaryColor: primaryColor,
                       title: 'Histórico de Saídas de Estoque',
                       child: _buildReportTable(),
                     ),
@@ -113,11 +122,9 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     );
   }
 
-  // Helper para o card padrão
+  /// Helper para construir o [Card] padrão da tela de relatórios.
   Widget _buildReportCard({
     required Color cardColor,
-    required Color textFieldColor,
-    required Color primaryColor,
     required String title,
     required Widget child,
   }) {
@@ -141,7 +148,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     );
   }
 
-  // Helper para o filtro de data
+  /// Helper para construir o widget de filtro de data.
   Widget _buildDateFilter(Color textFieldColor, Color primaryColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -152,7 +159,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
             Expanded(
               child: TextFormField(
                 controller: _startDateController,
-                readOnly: true, // O campo não pode ser digitado
+                readOnly: true, // Campo não é editável diretamente
                 onTap: () => _selectDate(context, _startDateController),
                 decoration: _buildInputDecoration(
                   'De:',
@@ -192,7 +199,8 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     );
   }
 
-  // Helper para a tabela de resultados (com dados de exemplo)
+  /// Helper para construir a tabela de resultados.
+  /// (Atualmente, usa dados de exemplo).
   Widget _buildReportTable() {
     // Dados de exemplo baseados no PDF (Página 8)
     final data = [
@@ -201,9 +209,9 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
       {'item': 'Queijo', 'data': '24/04/2024 08:15', 'qtd': '2'},
     ];
 
-    // **** CORREÇÃO APLICADA AQUI ****
-    // Adicionado SingleChildScrollView com rolagem horizontal
-    // e um Row para garantir que o DataTable tenha espaço infinito para rolar.
+    /// A [DataTable] é envolvida por um [SingleChildScrollView] horizontal
+    /// para evitar o 'RenderFlex overflow' (estouro de pixels) em telas
+    /// pequenas (mobile).
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -229,6 +237,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                 ),
               ),
             ],
+            // Mapeia os dados de exemplo para as linhas da tabela
             rows: data.map((row) {
               return DataRow(
                 cells: [
@@ -244,7 +253,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     );
   }
 
-  // Helper de decoração (copiado das outras telas)
+  /// Helper para construir a decoração padrão dos [TextFormField] desta tela.
   InputDecoration _buildInputDecoration(
     String label,
     IconData icon,
@@ -257,6 +266,11 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
       fillColor: fillColor,
       prefixIcon: Icon(icon, color: Colors.white),
       border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide.none,
+      ),
+      // Adicionado 'enabledBorder' para consistência
+      enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,
       ),

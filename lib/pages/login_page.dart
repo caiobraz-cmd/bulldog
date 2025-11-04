@@ -1,8 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-// Imports do Provider removidos
 
+/// Tela de Login
+///
+/// Responsável pela autenticação do usuário (cliente ou admin)
+/// e pela navegação para a rota correspondente.
+/// Esta tela também contém a animação de fade-in.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -10,48 +14,61 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-// 1. ADICIONADO 'SingleTickerProviderStateMixin' para a animação
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
+  // Controladores para os campos de texto de email e senha.
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _isLoading = false;
+
+  /// Nó de foco para gerenciar a transição do campo de email para o de senha.
   final _passwordFocusNode = FocusNode();
 
-  // 2. Controladores de animação para o Fade-in
+  /// Controla o estado de carregamento (ex: durante a chamada da API).
+  bool _isLoading = false;
+
+  // --- Controladores de Animação para Fade-in ---
+
+  /// Controlador principal para a animação de fade-in da tela.
   late AnimationController _fadeController;
+
+  /// Animação de opacidade (de 0.0 a 1.0) controlada pelo [_fadeController].
   late Animation<double> _opacityAnimation;
 
   @override
   void initState() {
     super.initState();
-    // 3. Configura a animação de Fade-in (2 segundos)
+
+    // Configura e inicia a animação de fade-in da tela.
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000), // Duração do fade-in
+      duration: const Duration(milliseconds: 2000), // 2 segundos de fade-in
     );
     _opacityAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(_fadeController);
 
-    // Inicia o fade-in
+    // Inicia a animação assim que a tela é construída.
     _fadeController.forward();
   }
 
   @override
   void dispose() {
+    // É crucial descartar os controladores para evitar memory leaks.
     _passwordFocusNode.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _fadeController.dispose(); // Descarta o novo controlador
+    _fadeController.dispose();
     super.dispose();
   }
 
+  /// Tenta autenticar o usuário contra a API.
   Future<void> _login() async {
+    // Remove espaços em branco do início e fim das credenciais.
     final String email = _emailController.text.trim();
     final String password = _passwordController.text.trim();
 
+    // Validação de campos vazios.
     if (email.isEmpty || password.isEmpty) {
       _showFeedbackMessage(
         'Por favor, preencha e-mail e senha.',
@@ -60,6 +77,7 @@ class _LoginScreenState extends State<LoginScreen>
       return;
     }
 
+    // Ativa o indicador de carregamento.
     setState(() {
       _isLoading = true;
     });
@@ -67,27 +85,25 @@ class _LoginScreenState extends State<LoginScreen>
     final url = Uri.parse('https://oracleapex.com/ords/bulldog/api/login-user');
 
     try {
+      // Realiza a chamada POST para a API de login.
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'username': email, 'password': password}),
       );
 
+      // Verifica se o widget ainda está na tela após a chamada assíncrona.
       if (!mounted) return;
 
       final responseData = json.decode(response.body);
 
-      // Verificamos o 'status' DENTRO do JSON
-      // (Assumindo que a API do seu colega ainda retorna 'status: ok'
-      // ou a versão que você reverteu)
+      // A API do APEX retorna 200 mesmo em falha,
+      // então verificamos o campo 'status' dentro do JSON.
       if (response.statusCode == 200 && responseData['status'] == 'ok') {
-        // SUCESSO!
+        // SUCESSO: Autenticado.
         final String role = responseData['role'] ?? 'unknown';
 
-        // Lógica do AuthProvider REMOVIDA
-        // final String userName = responseData['user_name'] ?? 'Cliente';
-        // Provider.of<AuthProvider>(context, listen: false).login(userName);
-
+        // Navega para a rota apropriada baseada na 'role'.
         switch (role) {
           case 'admin':
             Navigator.of(context).pushReplacementNamed('/admin');
@@ -102,15 +118,17 @@ class _LoginScreenState extends State<LoginScreen>
             );
         }
       } else {
-        // FALHA (ou 'status' == 'erro')
+        // FALHA: Credenciais inválidas ou erro da API.
         final String message =
             responseData['message'] ?? 'Credenciais inválidas.';
         _showFeedbackMessage(message, isError: true);
       }
     } catch (error) {
-      // Erro de rede
+      // Erro de Rede (ex: sem internet, DNS, timeout).
       _showFeedbackMessage('Erro de conexão: $error', isError: true);
     } finally {
+      // Garante que o indicador de carregamento seja desativado,
+      // mesmo se ocorrer um erro.
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -119,6 +137,7 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  /// Exibe uma SnackBar de feedback (sucesso ou erro) para o usuário.
   void _showFeedbackMessage(String message, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -135,12 +154,14 @@ class _LoginScreenState extends State<LoginScreen>
     const primaryColor = Color(0xFFe41d31);
     const textFieldColor = Color(0xFF1a1a1a);
 
-    // 4. TODO O SCAFFOLD É ENVOLVIDO NO 'FadeTransition'
+    // A tela inteira é envolvida em um FadeTransition
+    // para animar sua entrada.
     return FadeTransition(
       opacity: _opacityAnimation,
       child: Scaffold(
         body: Stack(
           children: [
+            // Fundo com gradiente
             Container(
               width: double.infinity,
               height: double.infinity,
@@ -156,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen>
                   left: 32.0,
                   right: 32.0,
                   top: 32.0,
-                  bottom: 250.0,
+                  bottom: 250.0, // Espaço para o footer não cobrir o form
                 ),
                 child: Align(
                   alignment: Alignment.topCenter,
@@ -179,6 +200,7 @@ class _LoginScreenState extends State<LoginScreen>
                           },
                         ),
                         const SizedBox(height: 40),
+                        // Campo de Email
                         TextField(
                           controller: _emailController,
                           style: const TextStyle(color: Colors.white),
@@ -199,12 +221,14 @@ class _LoginScreenState extends State<LoginScreen>
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                           onSubmitted: (_) {
+                            // Pula para o campo de senha ao pressionar 'Enter'
                             FocusScope.of(
                               context,
                             ).requestFocus(_passwordFocusNode);
                           },
                         ),
                         const SizedBox(height: 20),
+                        // Campo de Senha
                         TextField(
                           controller: _passwordController,
                           focusNode: _passwordFocusNode,
@@ -226,12 +250,14 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                           textInputAction: TextInputAction.done,
                           onSubmitted: (_) {
+                            // Chama a função de login ao pressionar 'Enter'
                             if (!_isLoading) {
                               _login();
                             }
                           },
                         ),
                         const SizedBox(height: 40),
+                        // Botão de Login
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -244,6 +270,8 @@ class _LoginScreenState extends State<LoginScreen>
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
+                            // Mostra um CircularProgressIndicator
+                            // ou o texto, baseado no estado _isLoading.
                             child: _isLoading
                                 ? const SizedBox(
                                     width: 24,
@@ -263,6 +291,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
                         const SizedBox(height: 12),
+                        // Botão de navegação para a tela de Registro
                         TextButton(
                           onPressed: () {
                             Navigator.pushNamed(context, '/register');
@@ -283,6 +312,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               ),
             ),
+            // Footer Fixo no final da tela
             Positioned(
               left: 0,
               right: 0,

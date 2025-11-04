@@ -3,9 +3,22 @@ import '../models/product.dart';
 import '../providers/cart_provider.dart';
 import 'additionals_dialog.dart';
 
+/// Um [Card] customizado para exibir um [Product] na [HomePage].
+///
+/// Este widget exibe a imagem, nome, preço e descrição do produto.
+/// Ele também gerencia a lógica para os dois botões de ação:
+/// 1. "Vamos nessa?" (Fluxo de compra direta).
+/// 2. "Adicionar ao Carrinho" (Fluxo de compra múltipla).
 class ProductCard extends StatelessWidget {
+  /// Os dados do produto a serem exibidos.
   final Product product;
+
+  /// A instância do provider do carrinho, necessária para o [AdditionalsDialog].
   final CartProvider cartProvider;
+
+  /// Um callback [VoidCallback] que é chamado quando o [AdditionalsDialog]
+  /// é fechado. Usado pela [HomePage] para chamar `setState` e
+  /// atualizar o badge do carrinho.
   final VoidCallback onCartUpdated;
 
   const ProductCard({
@@ -15,15 +28,21 @@ class ProductCard extends StatelessWidget {
     required this.onCartUpdated,
   });
 
+  /// Método helper para exibir o [AdditionalsDialog].
+  ///
+  /// Controla qual fluxo de usuário será ativado com base no
+  /// parâmetro [isBuyNow].
   void _showAdditionalsDialog(BuildContext context, {required bool isBuyNow}) {
     showDialog(
       context: context,
       builder: (context) => AdditionalsDialog(
         product: product,
         cartProvider: cartProvider,
-        isBuyNow: isBuyNow,
+        isBuyNow: isBuyNow, // Passa 'true' para "Vamos nessa?"
       ),
     ).then((_) {
+      // Após o dialog fechar (seja adicionando ou comprando),
+      // chama o callback para notificar a HomePage.
       onCartUpdated();
     });
   }
@@ -31,27 +50,27 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: const Color.fromARGB(106, 46, 45, 45),
+      color: const Color.fromARGB(106, 46, 45, 45), // Fundo semitransparente
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 4,
-      // 1. Padding geral ajustado
       child: Padding(
-        padding: const EdgeInsets.all(16.0), // Aumentei um pouco (era 12)
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product Image
+            // Imagem do Produto
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
               child: Container(
-                // 2. ALTURA DA IMAGEM AUMENTADA (para cortar menos)
-                height: 200, // Antes era 150
+                height: 200, // Altura ajustada para a imagem
                 width: double.infinity,
                 decoration: const BoxDecoration(color: Colors.grey),
                 child: Image.asset(
-                  product.imagePath,
+                  product
+                      .imagePath, // 'imagePath' é um getter no modelo Product
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
+                    // Fallback de imagem
                     return Container(
                       color: Colors.grey[300],
                       child: const Icon(
@@ -64,9 +83,9 @@ class ProductCard extends StatelessWidget {
                 ),
               ),
             ),
-            // 3. Espaçamentos internos ajustados
-            const SizedBox(height: 10), // Antes era 8
-            // Product Name
+            const SizedBox(height: 10),
+
+            // Nome do Produto
             Text(
               product.name,
               style: const TextStyle(
@@ -79,7 +98,7 @@ class ProductCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
 
-            // Product Price
+            // Preço do Produto
             Text(
               'R\$ ${product.price.toStringAsFixed(2)}',
               style: const TextStyle(
@@ -90,20 +109,24 @@ class ProductCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
 
-            // Product Description
+            // Descrição/Ingredientes
             Text(
-              product.description,
+              product.description, // 'description' é um getter no modelo
               style: const TextStyle(color: Colors.white, fontSize: 14),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            // 4. ESPAÇAMENTO FLEXÍVEL (para empurrar os botões para baixo)
-            // Isso vai usar o "espaço em branco" que estava sobrando
+
+            /// [Spacer] é usado para preencher o espaço vertical vazio
+            /// no [Card], empurrando os botões para a parte inferior.
+            /// Isso garante um layout consistente, independentemente do
+            /// tamanho da descrição.
             const Spacer(),
 
-            // Buttons Row - "Vamos nessa?" and Cart Button
+            // Linha de Botões
             Row(
               children: [
+                /// Botão "Vamos nessa?" (Compra Direta)
                 Expanded(
                   flex: 2,
                   child: ElevatedButton(
@@ -121,6 +144,8 @@ class ProductCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
+
+                /// Botão "Adicionar ao Carrinho"
                 Expanded(
                   flex: 1,
                   child: ElevatedButton(
